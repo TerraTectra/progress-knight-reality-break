@@ -2,6 +2,7 @@
 // Kept separate from original Progress Knight logic so the fork stays clean and upstream-friendly.
 
 const REALITY_BREAK_SAVE_KEY = "progress-knight-reality-break-meta-v1";
+const REALITY_BREAK_BASE_GAME_SPEED = 20;
 
 const REALITY_BREAK_DEFAULT_META = {
   version: 1,
@@ -38,6 +39,17 @@ function saveRealityBreakMeta(meta) {
   localStorage.setItem(REALITY_BREAK_SAVE_KEY, JSON.stringify({ ...cloneRealityBreakDefaultMeta(), ...meta }));
 }
 
+function installRealityBreakSpeedTuning() {
+  if (typeof window === "undefined") return;
+  window.getGameSpeed = function getRealityBreakGameSpeed() {
+    if (typeof gameData === "undefined") return 0;
+    const timeWarping = gameData.taskData?.["Time warping"];
+    const timeWarpingSpeed = gameData.timeWarpingEnabled && timeWarping ? timeWarping.getEffect() : 1;
+    const alive = typeof isAlive === "function" ? +isAlive() : 1;
+    return REALITY_BREAK_BASE_GAME_SPEED * +!gameData.paused * alive * timeWarpingSpeed;
+  };
+}
+
 function canBreakReality() {
   if (typeof gameData === "undefined") return false;
   const evil = gameData.evil || 0;
@@ -67,6 +79,7 @@ function installRealityBreakMetaPanel() {
     <div style="color: gray; margin-bottom: 8px">
       Early scaffold. This panel tracks the future multiverse layer without changing original Progress Knight yet.
     </div>
+    <div>Base game speed: <b>x5</b></div>
     <div>Universe: <b id="rbUniverse">${meta.currentUniverse}</b></div>
     <div>Highest universe: <b id="rbHighestUniverse">${meta.highestUniverse}</b></div>
     <div>Metaverse points: <b id="rbMetaPoints">${meta.metaversePoints}</b></div>
@@ -85,8 +98,12 @@ function updateRealityBreakMetaPanel() {
 }
 
 function installRealityBreakMetaScaffold() {
+  installRealityBreakSpeedTuning();
   installRealityBreakMetaPanel();
-  setInterval(updateRealityBreakMetaPanel, 1000);
+  setInterval(() => {
+    installRealityBreakSpeedTuning();
+    updateRealityBreakMetaPanel();
+  }, 1000);
 }
 
 window.addEventListener("load", installRealityBreakMetaScaffold);
