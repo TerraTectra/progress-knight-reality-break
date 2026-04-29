@@ -1,0 +1,164 @@
+/* Reality Break visual polish: keep original Progress Knight layout, only modernize readability. */
+:root {
+  --rb-bg: #202020;
+  --rb-panel: #2c2c2c;
+  --rb-panel-soft: #333333;
+  --rb-border: #151515;
+  --rb-border-soft: #444444;
+  --rb-text: #f4f4f4;
+  --rb-muted: #9a9a9a;
+  --rb-active: rgb(225, 165, 0);
+  --rb-active-soft: rgba(225, 165, 0, 0.16);
+  --rb-green: #18a84d;
+  --rb-red: #df3a32;
+  --rb-blue: #2d8dda;
+}
+
+body.dark {
+  background: var(--rb-bg);
+  color: var(--rb-text);
+}
+
+h1 {
+  margin-top: 0;
+  color: #f5f5f5;
+  letter-spacing: 0.2px;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
+}
+
+.panel {
+  background: var(--rb-panel) !important;
+  border: 1px solid var(--rb-border) !important;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.18);
+}
+
+.tabButton {
+  transition: background-color 0.12s ease, color 0.12s ease, box-shadow 0.12s ease;
+  border-right: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.tabButton:hover {
+  background: #3a3a3a !important;
+}
+
+.tabButton.w3-blue-gray {
+  background: #607d8b !important;
+  box-shadow: inset 0 -2px 0 rgba(255, 255, 255, 0.12);
+}
+
+.button, .item-button {
+  border: 1px solid #dedede !important;
+  background: #242424 !important;
+  color: #ffffff !important;
+  transition: border-color 0.12s ease, background-color 0.12s ease;
+}
+
+.button:hover, .item-button:hover {
+  border-color: var(--rb-active) !important;
+  background: #363636 !important;
+}
+
+table.w3-table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+tr.headerRow th {
+  font-size: 16px;
+  padding-top: 8px !important;
+  padding-bottom: 8px !important;
+}
+
+td, th {
+  vertical-align: middle !important;
+}
+
+.progress-bar {
+  border-radius: 0;
+  overflow: hidden;
+  background: #1b1b1b;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.progress-bar:hover {
+  box-shadow: 0 0 0 1px rgba(225, 165, 0, 0.28);
+}
+
+.progress-fill {
+  transition: width 0.18s linear;
+}
+
+.progress-text {
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+#coinDisplay {
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
+#signDisplay, #netDisplay {
+  font-size: 17px;
+  font-weight: 800;
+}
+
+#netDisplay {
+  display: inline-block;
+  padding: 1px 3px;
+  border-radius: 2px;
+  background: rgba(9, 160, 230, 0.08);
+}
+
+#incomeDisplay, #expenseDisplay {
+  opacity: 0.82;
+}
+
+#quickTaskDisplay .progress-bar {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+}
+
+.requiredRow td {
+  background: rgba(0, 0, 0, 0.08);
+  color: #a8a8a8 !important;
+}
+
+#evilInfo {
+  display: none;
+}
+
+body.rb-evil-opened #evilInfo {
+  display: inline;
+}
+
+#realityBreakAutoShop {
+  display: block;
+  margin-top: 8px;
+  padding: 8px;
+  border: 1px solid #3c3c3c;
+  background: #252525;
+}
+
+#realityBreakAutoShop.locked {
+  opacity: 0.72;
+}
+
+#realityBreakAutoShop .rb-title {
+  color: var(--rb-active);
+  font-weight: 700;
+}
+
+#realityBreakAutoShop .rb-note {
+  margin-top: 3px;
+  color: #8f8f8f;
+  font-size: 12px;
+}
+
+#realityBreakAutoShop input {
+  margin-left: 6px;
+}
+
+#realityBreakMetaPanel {
+  border-top: 1px solid #444;
+  margin-top: 16px;
+  padding-top: 8px;
+}
