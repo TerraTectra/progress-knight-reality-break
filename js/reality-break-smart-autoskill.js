@@ -1,6 +1,7 @@
 // Reality Break Smart Auto-learn.
-// Replaces the original auto-learn priority with a planner that considers unlocks, quick levels and useful passive bonuses.
-// The original game still calls setTask() from its own automation loop, so this script intercepts skill picks too.
+// Full replacement for original auto-learn.
+// The original game stores a reference to #autoLearn early, so we detach that checkbox,
+// keep it permanently off, and use our own visible smart checkbox instead.
 
 function rbTaskRow(taskName) {
   return document.getElementById("row " + taskName);
@@ -10,7 +11,7 @@ function rbTaskIsVisible(taskName) {
   var row = rbTaskRow(taskName);
   if (!row) return false;
   var style = window.getComputedStyle ? window.getComputedStyle(row) : null;
-  return !row.classList.contains("hiddenTask") && row.style.display !== "none" && (!style || style.display !== "none" && style.visibility !== "hidden");
+  return !row.classList.contains("hiddenTask") && row.style.display !== "none" && (!style || (style.display !== "none" && style.visibility !== "hidden"));
 }
 
 function rbTaskIsUnlocked(taskName) {
@@ -40,9 +41,39 @@ function rbTaskLevel(taskName) {
   return task ? task.level || 0 : 0;
 }
 
+function rbDetachOriginalAutoLearn() {
+  if (window.__rbSmartAutoLearnDetached) return;
+
+  var original = document.getElementById("autoLearn");
+  if (!original) return;
+
+  var smart = original.cloneNode(true);
+  smart.id = "rbSmartAutoLearn";
+  smart.checked = original.checked;
+  smart.classList.add("sidebar-element");
+  original.checked = false;
+  original.style.display = "none";
+  original.setAttribute("aria-hidden", "true");
+  original.insertAdjacentElement("afterend", smart);
+
+  window.__rbOriginalAutoLearnCheckbox = original;
+  window.__rbSmartAutoLearnCheckbox = smart;
+  window.__rbSmartAutoLearnDetached = true;
+}
+
+function rbKeepOriginalAutoLearnDisabled() {
+  var original = window.__rbOriginalAutoLearnCheckbox || document.getElementById("autoLearn");
+  if (original) {
+    original.checked = false;
+    original.style.display = "none";
+  }
+}
+
 function rbAutoLearnEnabled() {
-  var autoLearn = document.getElementById("autoLearn");
-  return !!(autoLearn && autoLearn.checked);
+  rbDetachOriginalAutoLearn();
+  rbKeepOriginalAutoLearnDisabled();
+  var smart = window.__rbSmartAutoLearnCheckbox || document.getElementById("rbSmartAutoLearn");
+  return !!(smart && smart.checked);
 }
 
 function rbAvailableSkills() {
@@ -61,9 +92,6 @@ function rbRequirementCanBeWorkedToward(req, focusedSkillName) {
     if (!part.task) return true;
     if (part.task === focusedSkillName) return true;
     if (rbTaskLevel(part.task) >= part.requirement) return true;
-
-    // Another missing requirement is acceptable only if that task is already unlocked and visible.
-    // This prevents the planner from chasing far-future hidden chains like Time warping before Mage exists.
     return rbTaskIsUnlocked(part.task) && rbTaskIsVisible(part.task);
   });
 }
@@ -193,39 +221,18 @@ function rbPickSmartSkillPlan() {
   return best;
 }
 
-function rbSetSkillWithoutIntercept(skillName) {
+function rbSetSkill(skillName) {
   if (!skillName || !rbTaskIsUnlocked(skillName) || !rbSkillIsVisible(skillName)) return;
-  var originalSetTask = window.__rbOriginalSetTask || window.setTask || setTask;
-  window.__rbSmartAutoLearnBypass = true;
-  try { originalSetTask(skillName); }
-  finally { window.__rbSmartAutoLearnBypass = false; }
-}
-
-function rbInstallSetTaskInterceptor() {
-  if (typeof setTask !== "function") return;
-  if (window.__rbSmartSetTaskInstalled && window.__rbOriginalSetTask) return;
-
-  window.__rbOriginalSetTask = window.__rbOriginalSetTask || setTask;
-  var originalSetTask = window.__rbOriginalSetTask;
-
-  setTask = function(taskName) {
-    if (!window.__rbSmartAutoLearnBypass && rbAutoLearnEnabled() && rbIsSkillName(taskName)) {
-      var plan = rbPickSmartSkillPlan();
-      if (plan && plan.skill && plan.skill.name) return originalSetTask(plan.skill.name);
-    }
-    if (rbIsSkillName(taskName) && (!rbTaskIsUnlocked(taskName) || !rbSkillIsVisible(taskName))) return null;
-    return originalSetTask(taskName);
-  };
-
-  window.setTask = setTask;
-  window.__rbSmartSetTaskInstalled = true;
+  gameData.currentSkill = gameData.taskData[skillName];
 }
 
 function rbSmartAutoLearnTick() {
+  rbDetachOriginalAutoLearn();
+  rbKeepOriginalAutoLearnDisabled();
   if (!rbAutoLearnEnabled()) return;
-  rbInstallSetTaskInterceptor();
+
   var plan = rbPickSmartSkillPlan();
-  if (plan && gameData.currentSkill !== plan.skill) rbSetSkillWithoutIntercept(plan.skill.name);
+  if (plan && gameData.currentSkill !== plan.skill) rbSetSkill(plan.skill.name);
 }
 
 function rbFormatDays(days) {
@@ -236,6 +243,7 @@ function rbFormatDays(days) {
 }
 
 function rbInstallSmartAutoLearnUi() {
+  rbDetachOriginalAutoLearn();
   var automation = document.getElementById("automation");
   if (!automation || document.getElementById("realityBreakSmartLearnNote")) return;
   var note = document.createElement("div");
@@ -259,14 +267,12 @@ function rbUpdateSmartAutoLearnUi() {
 
 function installRealityBreakSmartAutoLearn() {
   rbInstallSmartAutoLearnUi();
-  rbInstallSetTaskInterceptor();
   if (!window.__rbSmartAutoLearnInterval) {
     window.__rbSmartAutoLearnInterval = setInterval(function() {
       rbInstallSmartAutoLearnUi();
-      rbInstallSetTaskInterceptor();
       rbUpdateSmartAutoLearnUi();
       rbSmartAutoLearnTick();
-    }, 200);
+    }, 100);
   }
 }
 
