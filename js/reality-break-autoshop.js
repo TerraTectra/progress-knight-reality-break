@@ -1,125 +1,202 @@
-// Reality Break Auto Shop.
-// Adds an optional safe buyer without rewriting original Progress Knight internals.
+// Reality Break Auto-shop.
+// Safe QoL buyer for the original Progress Knight runtime.
 
-const REALITY_BREAK_AUTOSHOP_KEY = "progress-knight-reality-break-autoshop-v1";
+var REALITY_BREAK_AUTOSHOP_ENABLED_KEY = "progress-knight-reality-break-autoshop-enabled-v2";
+var REALITY_BREAK_AUTOSHOP_UNLOCKED_KEY = "progress-knight-reality-break-autoshop-unlocked-v2";
+var REALITY_BREAK_AUTOSHOP_RESERVE = 0.1;
 
-function rbReadAutoShopEnabled() {
-  try {
-    return localStorage.getItem(REALITY_BREAK_AUTOSHOP_KEY) === "1";
-  } catch {
-    return false;
-  }
+function rbReadFlag(key) {
+    try {
+        return localStorage.getItem(key) === "1";
+    } catch (error) {
+        return false;
+    }
 }
 
-function rbWriteAutoShopEnabled(value) {
-  try {
-    localStorage.setItem(REALITY_BREAK_AUTOSHOP_KEY, value ? "1" : "0");
-  } catch {}
+function rbWriteFlag(key, value) {
+    try {
+        localStorage.setItem(key, value ? "1" : "0");
+    } catch (error) {}
 }
 
-function rbCanUseAutoShop() {
-  if (typeof gameData === "undefined") return false;
-  return (gameData.taskData?.Merchant?.level || 0) >= 100;
+function rbAutoShopMerchantLevel() {
+    if (typeof gameData === "undefined" || !gameData.taskData || !gameData.taskData["Merchant"]) return 0;
+    return gameData.taskData["Merchant"].level || 0;
 }
 
-function rbCurrentNet() {
-  if (typeof gameData === "undefined" || !gameData.currentJob) return 0;
-  return gameData.currentJob.getIncome() - getExpense();
+function rbAutoShopUnlocked() {
+    if (rbAutoShopMerchantLevel() >= 100) rbWriteFlag(REALITY_BREAK_AUTOSHOP_UNLOCKED_KEY, true);
+    return rbReadFlag(REALITY_BREAK_AUTOSHOP_UNLOCKED_KEY);
 }
 
-function rbNetAfterProperty(property) {
-  const current = gameData.currentProperty;
-  const currentExpense = current ? current.getExpense() : 0;
-  const nextExpense = property.getExpense();
-  return rbCurrentNet() + currentExpense - nextExpense;
+function rbAutoShopEnabled() {
+    return rbReadFlag(REALITY_BREAK_AUTOSHOP_ENABLED_KEY);
 }
 
-function rbNetAfterMisc(misc) {
-  return rbCurrentNet() - misc.getExpense();
+function rbSetAutoShopEnabled(value) {
+    rbWriteFlag(REALITY_BREAK_AUTOSHOP_ENABLED_KEY, value);
 }
 
-function rbFindPropertyUpgrade() {
-  const current = gameData.currentProperty;
-  const values = itemCategories.Properties
-    .map((name) => gameData.itemData[name])
-    .filter(Boolean)
-    .filter((item) => item !== current)
-    .filter((item) => item.getEffect() > (current?.getEffect?.() || 1))
-    .filter((item) => rbNetAfterProperty(item) > Math.max(1, gameData.currentJob.getIncome() * 0.1));
-
-  return values.sort((a, b) => b.getEffect() / Math.max(1, b.getExpense()) - a.getEffect() / Math.max(1, a.getExpense()))[0] || null;
+function rbAutoShopRow(item) {
+    return item ? document.getElementById("row " + item.name) : null;
 }
 
-function rbFindMiscUpgrade() {
-  const owned = gameData.currentMisc || [];
-  const values = itemCategories.Misc
-    .map((name) => gameData.itemData[name])
-    .filter(Boolean)
-    .filter((item) => !owned.includes(item))
-    .filter((item) => rbNetAfterMisc(item) > Math.max(1, gameData.currentJob.getIncome() * 0.1));
+function rbAutoShopIsVisible(item) {
+    var row = rbAutoShopRow(item);
+    return !!row && !row.classList.contains("hidden");
+}
 
-  return values.sort((a, b) => b.getEffect() / Math.max(1, b.getExpense()) - a.getEffect() / Math.max(1, a.getExpense()))[0] || null;
+function rbAutoShopIncome() {
+    if (typeof getIncome !== "function") return 0;
+    return getIncome();
+}
+
+function rbAutoShopExpense() {
+    if (typeof getExpense !== "function") return 0;
+    return getExpense();
+}
+
+function rbAutoShopNet() {
+    return rbAutoShopIncome() - rbAutoShopExpense();
+}
+
+function rbAutoShopReserve() {
+    return Math.max(1, rbAutoShopIncome() * REALITY_BREAK_AUTOSHOP_RESERVE);
+}
+
+function rbAutoShopNetAfterProperty(item) {
+    var currentExpense = gameData.currentProperty ? gameData.currentProperty.getExpense() : 0;
+    return rbAutoShopNet() + currentExpense - item.getExpense();
+}
+
+function rbAutoShopNetAfterMisc(item) {
+    return rbAutoShopNet() - item.getExpense();
+}
+
+function rbAutoShopCanBuyProperty(item) {
+    return item && rbAutoShopIsVisible(item) && rbAutoShopNetAfterProperty(item) > rbAutoShopReserve();
+}
+
+function rbAutoShopCanBuyMisc(item) {
+    return item && rbAutoShopIsVisible(item) && gameData.currentMisc.indexOf(item) < 0 && rbAutoShopNetAfterMisc(item) > rbAutoShopReserve();
+}
+
+function rbAutoShopNextProperty() {
+    if (!itemCategories || !itemCategories["Properties"]) return null;
+    var properties = itemCategories["Properties"];
+    var currentIndex = properties.indexOf(gameData.currentProperty ? gameData.currentProperty.name : "Homeless");
+    for (var i = currentIndex + 1; i < properties.length; i++) {
+        var item = gameData.itemData[properties[i]];
+        if (item && rbAutoShopIsVisible(item)) return item;
+    }
+    return null;
+}
+
+function rbAutoShopBestMisc() {
+    if (!itemCategories || !itemCategories["Misc"]) return null;
+    var best = null;
+    var bestScore = -Infinity;
+    for (var i = 0; i < itemCategories["Misc"].length; i++) {
+        var item = gameData.itemData[itemCategories["Misc"][i]];
+        if (!rbAutoShopCanBuyMisc(item)) continue;
+        var score = item.getEffect() / Math.max(1, item.getExpense());
+        if (score > bestScore) {
+            best = item;
+            bestScore = score;
+        }
+    }
+    return best;
+}
+
+function rbAutoShopDescribeNext() {
+    var nextProperty = rbAutoShopNextProperty();
+    if (nextProperty) {
+        var afterProperty = rbAutoShopNetAfterProperty(nextProperty);
+        if (rbAutoShopCanBuyProperty(nextProperty)) {
+            return "Next: " + nextProperty.name + " ready. Net after: " + format(Math.floor(afterProperty)) + ".";
+        }
+        return "Next: " + nextProperty.name + " waiting. Net after would be " + format(Math.floor(afterProperty)) + ".";
+    }
+
+    var bestMisc = rbAutoShopBestMisc();
+    if (bestMisc) {
+        return "Next: " + bestMisc.name + " ready. Net after: " + format(Math.floor(rbAutoShopNetAfterMisc(bestMisc))) + ".";
+    }
+
+    return "Waiting for a safe visible purchase.";
 }
 
 function rbAutoShopTick() {
-  if (!rbReadAutoShopEnabled() || !rbCanUseAutoShop() || typeof gameData === "undefined" || !gameData.currentJob) return;
+    if (!rbAutoShopUnlocked() || !rbAutoShopEnabled()) return;
+    if (typeof gameData === "undefined" || !gameData.itemData || !gameData.currentJob) return;
 
-  const property = rbFindPropertyUpgrade();
-  if (property) {
-    setProperty(property.name);
-    return;
-  }
+    var purchases = 0;
+    while (purchases < 8) {
+        var nextProperty = rbAutoShopNextProperty();
+        if (rbAutoShopCanBuyProperty(nextProperty)) {
+            setProperty(nextProperty.name);
+            purchases += 1;
+            continue;
+        }
 
-  const misc = rbFindMiscUpgrade();
-  if (misc) setMisc(misc.name);
+        var bestMisc = rbAutoShopBestMisc();
+        if (bestMisc) {
+            setMisc(bestMisc.name);
+            purchases += 1;
+            continue;
+        }
+
+        break;
+    }
 }
 
 function rbInstallAutoShopPanel() {
-  const automation = document.getElementById("automation");
-  if (!automation || document.getElementById("realityBreakAutoShop")) return;
+    var automation = document.getElementById("automation");
+    if (!automation || document.getElementById("realityBreakAutoShop")) return;
 
-  const wrapper = document.createElement("span");
-  wrapper.id = "realityBreakAutoShop";
-  wrapper.innerHTML = `
-    <div class="rb-title">Auto-shop</div>
-    <label>
-      <span>Enabled</span>
-      <input type="checkbox" id="realityBreakAutoShopToggle">
-    </label>
-    <div class="rb-note" id="realityBreakAutoShopNote"></div>
-  `;
-  automation.appendChild(document.createElement("br"));
-  automation.appendChild(wrapper);
+    var wrapper = document.createElement("span");
+    wrapper.id = "realityBreakAutoShop";
+    wrapper.innerHTML =
+        '<div class="rb-title">Auto-shop</div>' +
+        '<label><span>Enabled</span> <input type="checkbox" id="realityBreakAutoShopToggle"></label>' +
+        '<div class="rb-note" id="realityBreakAutoShopNote"></div>';
+    automation.appendChild(document.createElement("br"));
+    automation.appendChild(wrapper);
 
-  const toggle = document.getElementById("realityBreakAutoShopToggle");
-  toggle.checked = rbReadAutoShopEnabled();
-  toggle.addEventListener("change", () => rbWriteAutoShopEnabled(toggle.checked));
+    var toggle = document.getElementById("realityBreakAutoShopToggle");
+    toggle.checked = rbAutoShopEnabled();
+    toggle.onchange = function() {
+        rbSetAutoShopEnabled(toggle.checked);
+    };
 }
 
 function rbUpdateAutoShopPanel() {
-  const box = document.getElementById("realityBreakAutoShop");
-  const toggle = document.getElementById("realityBreakAutoShopToggle");
-  const note = document.getElementById("realityBreakAutoShopNote");
-  if (!box || !toggle || !note) return;
+    var box = document.getElementById("realityBreakAutoShop");
+    var toggle = document.getElementById("realityBreakAutoShopToggle");
+    var note = document.getElementById("realityBreakAutoShopNote");
+    if (!box || !toggle || !note) return;
 
-  const unlocked = rbCanUseAutoShop();
-  toggle.disabled = !unlocked;
-  box.classList.toggle("locked", !unlocked);
-  if (!unlocked) {
-    note.textContent = "Unlocks at Merchant level 100.";
-  } else {
-    note.textContent = "Buys only if Net/day stays positive with a 10% reserve.";
-  }
+    var unlocked = rbAutoShopUnlocked();
+    toggle.disabled = !unlocked;
+    box.classList.toggle("locked", !unlocked);
+
+    if (!unlocked) {
+        note.textContent = "Unlocks permanently at Merchant level 100.";
+    } else {
+        note.textContent = rbAutoShopEnabled()
+            ? rbAutoShopDescribeNext()
+            : "Unlocked permanently. Keeps Net/day above a 10% reserve.";
+    }
 }
 
-function installRealityBreakAutoShop() {
-  rbInstallAutoShopPanel();
-  rbUpdateAutoShopPanel();
-  setInterval(() => {
+function rbInstallAutoShop() {
     rbInstallAutoShopPanel();
     rbUpdateAutoShopPanel();
-    rbAutoShopTick();
-  }, 1000);
+    setInterval(function() {
+        rbInstallAutoShopPanel();
+        rbUpdateAutoShopPanel();
+        rbAutoShopTick();
+    }, 250);
 }
 
-window.addEventListener("load", installRealityBreakAutoShop);
+window.addEventListener("load", rbInstallAutoShop);

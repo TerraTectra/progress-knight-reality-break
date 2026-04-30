@@ -60,13 +60,3 @@ onmessage = function (event) {\
 		} catch (error) { console.log(logPrefix + 'Initialisation failed'); console.error(error); }
 	} else console.log(logPrefix + 'Initialisation failed - HTML5 Web Worker is not supported');
 }) ('HackTimerWorker.js');
-
-(function loadRealityBreakMetaScaffold() {
-    window.addEventListener('load', function () {
-        if (document.getElementById('realityBreakMetaScript')) return;
-        var script = document.createElement('script');
-        script.id = 'realityBreakMetaScript';
-        script.src = 'js/reality-break-meta.js';
-        document.body.appendChild(script);
-    });
-})();

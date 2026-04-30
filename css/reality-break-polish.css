@@ -106,7 +106,6 @@ td, th {
   display: inline-block;
   padding: 1px 3px;
   border-radius: 2px;
-  background: rgba(9, 160, 230, 0.08);
 }
 
 #incomeDisplay, #expenseDisplay {
@@ -161,4 +160,34 @@ body.rb-evil-opened #evilInfo {
   border-top: 1px solid #444;
   margin-top: 16px;
   padding-top: 8px;
+}
+
+#realityBreakColumn {
+  margin-top: 0;
+}
+
+#realityBreakColumn h2 {
+  color: #e1a500;
+  font-size: 22px;
+}
+
+#realityBreakColumn .rb-title {
+  color: #e1a500;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+#realityBreakColumn .rb-note {
+  color: #9a9a9a;
+  margin-bottom: 8px;
+}
+
+.rb-speed-button {
+  margin: 2px 4px 2px 0 !important;
+  padding: 5px 8px !important;
+}
+
+.rb-speed-button.active {
+  border-color: var(--rb-active) !important;
+  color: var(--rb-active) !important;
 }

@@ -28,7 +28,7 @@ const updateSpeed = 20
 
 const baseLifespan = 365 * 70
 
-const baseGameSpeed = 4
+const baseGameSpeed = 20
 
 const permanentUnlocks = ["Scheduling", "Shop", "Automation", "Quick task display"]
 
@@ -49,12 +49,12 @@ const jobBaseData = {
     "Holy knight": {name: "Holy knight", maxXp: 40000000, income: 15000},
     "Legendary knight": {name: "Legendary knight", maxXp: 150000000, income: 50000},
 
-    "Student": {name: "Student", maxXp: 100000, income: 100},
-    "Apprentice mage": {name: "Apprentice mage", maxXp: 1000000, income: 1000},
-    "Mage": {name: "Mage", maxXp: 10000000, income: 7500},
-    "Wizard": {name: "Wizard", maxXp: 100000000, income: 50000},
-    "Master wizard": {name: "Master wizard", maxXp: 10000000000, income: 250000},
-    "Chairman": {name: "Chairman", maxXp: 1000000000000, income: 1000000},
+    "Student": {name: "Student", maxXp: 45000, income: 100},
+    "Apprentice mage": {name: "Apprentice mage", maxXp: 180000, income: 1000},
+    "Mage": {name: "Mage", maxXp: 650000, income: 7500},
+    "Wizard": {name: "Wizard", maxXp: 2200000, income: 50000},
+    "Master wizard": {name: "Master wizard", maxXp: 8500000, income: 250000},
+    "Chairman": {name: "Chairman", maxXp: 42000000, income: 1000000},
 }
 
 const skillBaseData = {
@@ -551,6 +551,7 @@ function updateTaskRows() {
     for (key in gameData.taskData) {
         var task = gameData.taskData[key]
         var row = document.getElementById("row " + task.name)
+        if (!row) continue
         row.getElementsByClassName("level")[0].textContent = task.level
         row.getElementsByClassName("xpGain")[0].textContent = format(task.getXpGain())
         row.getElementsByClassName("xpLeft")[0].textContent = format(task.getXpLeft())
@@ -582,6 +583,7 @@ function updateItemRows() {
     for (key in gameData.itemData) {
         var item = gameData.itemData[key]
         var row = document.getElementById("row " + item.name)
+        if (!row) continue
         var button = row.getElementsByClassName("button")[0]
         button.disabled = gameData.coins < item.getExpense()
         var active = row.getElementsByClassName("active")[0]
@@ -596,10 +598,11 @@ function updateHeaderRows(categories) {
     for (categoryName in categories) {
         var className = removeSpaces(categoryName)
         var headerRow = document.getElementsByClassName(className)[0]
+        if (!headerRow) continue
         var maxLevelElement = headerRow.getElementsByClassName("maxLevel")[0]
-        gameData.rebirthOneCount > 0 ? maxLevelElement.classList.remove("hidden") : maxLevelElement.classList.add("hidden")
+        if (maxLevelElement) gameData.rebirthOneCount > 0 ? maxLevelElement.classList.remove("hidden") : maxLevelElement.classList.add("hidden")
         var skipSkillElement = headerRow.getElementsByClassName("skipSkill")[0]
-        skipSkillElement.style.display = categories == skillCategories && autoLearnElement.checked ? "block" : "none"
+        if (skipSkillElement) skipSkillElement.style.display = categories == skillCategories && autoLearnElement.checked ? "block" : "none"
     }
 }
 
@@ -649,6 +652,7 @@ function hideEntities() {
         var requirement = gameData.requirements[key]
         var completed = requirement.isCompleted()
         for (element of requirement.elements) {
+            if (!element) continue
             if (completed) {
                 element.classList.remove("hidden")
             } else {
@@ -716,28 +720,44 @@ function autoPromote() {
 
 function checkSkillSkipped(skill) {
     var row = document.getElementById("row " + skill.name)
+    if (!row) return false
     var isSkillSkipped = row.getElementsByClassName("checkbox")[0].checked
     return isSkillSkipped
 }
 
 function setSkillWithLowestMaxXp() {
-    var xpDict = {}
+    var bestSkill = null
+    var bestScore = Infinity
 
     for (skillName in gameData.taskData) {
         var skill = gameData.taskData[skillName]
         var requirement = gameData.requirements[skillName]
-        if (skill instanceof Skill && requirement.isCompleted() && !checkSkillSkipped(skill)) {
-            xpDict[skill.name] = skill.level //skill.getMaxXp() / skill.getXpGain()
+        var row = document.getElementById("row " + skill.name)
+        if (!(skill instanceof Skill) || !requirement || !row) continue
+        if (!requirement.isCompleted() || row.classList.contains("hidden") || checkSkillSkipped(skill)) continue
+
+        var xpGain = Math.max(1, skill.getXpGain())
+        var targetLevel = Math.ceil((skill.level + 1) / 10) * 10
+        if (targetLevel <= skill.level) targetLevel = skill.level + 10
+
+        var xpToTarget = Math.max(0, skill.getXpLeft())
+        var projectedLevel = skill.level + 1
+        while (projectedLevel < targetLevel) {
+            xpToTarget += Math.round(skill.baseData.maxXp * (projectedLevel + 1) * Math.pow(1.01, projectedLevel))
+            projectedLevel += 1
+        }
+
+        var trainingTime = xpToTarget / xpGain
+        var blockPenalty = Math.floor(skill.level / 10) * 100000
+        var score = blockPenalty + trainingTime
+
+        if (score < bestScore) {
+            bestScore = score
+            bestSkill = skill
         }
     }
 
-    if (xpDict == {}) {
-        skillWithLowestMaxXp = gameData.taskData["Concentration"]
-        return
-    }
-
-    var skillName = getKeyOfLowestValueFromDict(xpDict)
-    skillWithLowestMaxXp = gameData.taskData[skillName]
+    skillWithLowestMaxXp = bestSkill || gameData.taskData["Concentration"]
 }
 
 function getKeyOfLowestValueFromDict(dict) {
@@ -1011,13 +1031,22 @@ function updateUI() {
 }
 
 function update() {
-    increaseDays()
-    autoPromote()
-    autoLearn()
-    doCurrentTask(gameData.currentJob)
-    doCurrentTask(gameData.currentSkill)
-    applyExpenses()
-    updateUI()
+    try {
+        increaseDays()
+        autoPromote()
+        autoLearn()
+        doCurrentTask(gameData.currentJob)
+        doCurrentTask(gameData.currentSkill)
+        applyExpenses()
+    } catch (error) {
+        console.error("Game tick failed", error)
+    }
+
+    try {
+        updateUI()
+    } catch (error) {
+        console.error("UI update failed", error)
+    }
 }
 
 function resetGameData() {
@@ -1055,7 +1084,7 @@ gameData.currentMisc = []
 
 gameData.requirements = {
     //Other
-    "The Arcane Association": new TaskRequirement(getElementsByClass("The Arcane Association"), [{task: "Concentration", requirement: 200}, {task: "Meditation", requirement: 200}]),
+    "The Arcane Association": new TaskRequirement(getElementsByClass("The Arcane Association"), [{task: "Concentration", requirement: 90}, {task: "Meditation", requirement: 70}]),
     "Dark magic": new EvilRequirement(getElementsByClass("Dark magic"), [{requirement: 1}]),
     "Shop": new CoinRequirement([document.getElementById("shopTabButton")], [{requirement: gameData.itemData["Tent"].getExpense() * 50}]),
     "Rebirth tab": new AgeRequirement([document.getElementById("rebirthTabButton")], [{requirement: 25}]),
@@ -1086,12 +1115,12 @@ gameData.requirements = {
     "Legendary knight": new TaskRequirement([getTaskElement("Legendary knight")], [{task: "Mana control", requirement: 1000}, {task: "Battle tactics", requirement: 1000}, {task: "Holy knight", requirement: 10}]),
 
     //The Arcane Association
-    "Student": new TaskRequirement([getTaskElement("Student")], [{task: "Concentration", requirement: 200}, {task: "Meditation", requirement: 200}]),
-    "Apprentice mage": new TaskRequirement([getTaskElement("Apprentice mage")], [{task: "Mana control", requirement: 400}, {task: "Student", requirement: 10}]),
-    "Mage": new TaskRequirement([getTaskElement("Mage")], [{task: "Mana control", requirement: 700}, {task: "Apprentice mage", requirement: 10}]),
-    "Wizard": new TaskRequirement([getTaskElement("Wizard")], [{task: "Mana control", requirement: 1000}, {task: "Mage", requirement: 10}]),
-    "Master wizard": new TaskRequirement([getTaskElement("Master wizard")], [{task: "Mana control", requirement: 1500}, {task: "Wizard", requirement: 10}]),
-    "Chairman": new TaskRequirement([getTaskElement("Chairman")], [{task: "Mana control", requirement: 2000}, {task: "Master wizard", requirement: 10}]),
+    "Student": new TaskRequirement([getTaskElement("Student")], [{task: "Mana control", requirement: 1}]),
+    "Apprentice mage": new TaskRequirement([getTaskElement("Apprentice mage")], [{task: "Mana control", requirement: 80}, {task: "Student", requirement: 10}]),
+    "Mage": new TaskRequirement([getTaskElement("Mage")], [{task: "Mana control", requirement: 160}, {task: "Apprentice mage", requirement: 10}]),
+    "Wizard": new TaskRequirement([getTaskElement("Wizard")], [{task: "Immortality", requirement: 40}, {task: "Mage", requirement: 10}]),
+    "Master wizard": new TaskRequirement([getTaskElement("Master wizard")], [{task: "Time warping", requirement: 100}, {task: "Wizard", requirement: 10}]),
+    "Chairman": new TaskRequirement([getTaskElement("Chairman")], [{task: "Time warping", requirement: 25}, {task: "Master wizard", requirement: 10}]),
 
     //Fundamentals
     "Concentration": new TaskRequirement([getTaskElement("Concentration")], []),
@@ -1105,10 +1134,10 @@ gameData.requirements = {
     "Muscle memory": new TaskRequirement([getTaskElement("Muscle memory")], [{task: "Concentration", requirement: 30}, {task: "Strength", requirement: 30}]),
 
     //Magic
-    "Mana control": new TaskRequirement([getTaskElement("Mana control")], [{task: "Concentration", requirement: 200}, {task: "Meditation", requirement: 200}]),
+    "Mana control": new TaskRequirement([getTaskElement("Mana control")], [{task: "Concentration", requirement: 90}, {task: "Meditation", requirement: 70}]),
     "Immortality": new TaskRequirement([getTaskElement("Immortality")], [{task: "Apprentice mage", requirement: 10}]),
     "Time warping": new TaskRequirement([getTaskElement("Time warping")], [{task: "Mage", requirement: 10}]),
-    "Super immortality": new TaskRequirement([getTaskElement("Super immortality")], [{task: "Chairman", requirement: 1000}]),
+    "Super immortality": new TaskRequirement([getTaskElement("Super immortality")], [{task: "Immortality", requirement: 120}, {task: "Time warping", requirement: 75}, {task: "Chairman", requirement: 25}]),
 
     //Dark magic
     "Dark influence": new EvilRequirement([getTaskElement("Dark influence")], [{requirement: 1}]),
