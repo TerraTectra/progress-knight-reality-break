@@ -35,10 +35,12 @@ const permanentUnlocks = ["Scheduling", "Shop", "Automation", "Quick task displa
 const jobBaseData = {
     "Beggar": {name: "Beggar", maxXp: 50, income: 5},
     "Farmer": {name: "Farmer", maxXp: 100, income: 9},
-    "Fisherman": {name: "Fisherman", maxXp: 200, income: 15},
-    "Miner": {name: "Miner", maxXp: 400, income: 40},
-    "Blacksmith": {name: "Blacksmith", maxXp: 800, income: 80},
-    "Merchant": {name: "Merchant", maxXp: 1600, income: 150},
+    "Stable hand": {name: "Stable hand", maxXp: 140, income: 12},
+    "Fisherman": {name: "Fisherman", maxXp: 210, income: 18},
+    "Woodcutter": {name: "Woodcutter", maxXp: 300, income: 28},
+    "Miner": {name: "Miner", maxXp: 460, income: 48},
+    "Blacksmith": {name: "Blacksmith", maxXp: 850, income: 90},
+    "Merchant": {name: "Merchant", maxXp: 1650, income: 165},
 
     "Squire": {name: "Squire", maxXp: 100, income: 5},
     "Footman": {name: "Footman", maxXp: 1000, income: 50},
@@ -90,10 +92,10 @@ const skillBaseData = {
 
 const itemBaseData = {
     "Homeless": {name: "Homeless", expense: 0, effect: 1},
-    "Tent": {name: "Tent", expense: 15, effect: 1.4},
-    "Wooden hut": {name: "Wooden hut", expense: 100, effect: 2},
-    "Cottage": {name: "Cottage", expense: 750, effect: 3.5},
-    "House": {name: "House", expense: 3000, effect: 6},
+    "Tent": {name: "Tent", expense: 12, effect: 1.28},
+    "Wooden hut": {name: "Wooden hut", expense: 80, effect: 1.8},
+    "Cottage": {name: "Cottage", expense: 850, effect: 3},
+    "House": {name: "House", expense: 8500, effect: 5.2},
     "Large house": {name: "Large house", expense: 25000, effect: 12},
     "Small palace": {name: "Small palace", expense: 300000, effect: 25},
     "Grand palace": {name: "Grand palace", expense: 5000000, effect: 60},
@@ -104,11 +106,15 @@ const itemBaseData = {
     "Ancient citadel": {name: "Ancient citadel", expense: 25000000000, effect: 560},
     "Sky crown palace": {name: "Sky crown palace", expense: 160000000000, effect: 850},
 
-    "Cheap meal": {name: "Cheap meal", expense: 6, effect: 1.08, description: "Happiness"},
-    "Book": {name: "Book", expense: 10, effect: 1.5, description: "Skill xp"},
-    "Ledger": {name: "Ledger", expense: 25, effect: 0.96, description: "Expenses"},
-    "Dumbbells": {name: "Dumbbells", expense: 50, effect: 1.5, description: "Strength xp"},
-    "Training dummy": {name: "Training dummy", expense: 120, effect: 1.35, description: "Strength xp"},
+    "Cheap meal": {name: "Cheap meal", expense: 5, effect: 1.06, description: "Happiness"},
+    "Notebook": {name: "Notebook", expense: 8, effect: 1.12, description: "Concentration xp"},
+    "Book": {name: "Book", expense: 18, effect: 1.28, description: "Skill xp"},
+    "Work gloves": {name: "Work gloves", expense: 24, effect: 1.14, description: "Common job xp"},
+    "Ledger": {name: "Ledger", expense: 35, effect: 0.97, description: "Expenses"},
+    "Fishing net": {name: "Fishing net", expense: 55, effect: 1.18, description: "Fisherman pay"},
+    "Dumbbells": {name: "Dumbbells", expense: 70, effect: 1.35, description: "Strength xp"},
+    "Training dummy": {name: "Training dummy", expense: 145, effect: 1.28, description: "Combat xp"},
+    "Miner's lamp": {name: "Miner's lamp", expense: 180, effect: 1.18, description: "Mining pay"},
     "Meditation mat": {name: "Meditation mat", expense: 140, effect: 1.3, description: "Meditation xp"},
     "Personal squire": {name: "Personal squire", expense: 200, effect: 2, description: "Job xp"},
     "Steel longsword": {name: "Steel longsword", expense: 1000, effect: 2, description: "Military xp"},
@@ -121,7 +127,7 @@ const itemBaseData = {
 }
 
 const jobCategories = {
-    "Common work": ["Beggar", "Farmer", "Fisherman", "Miner", "Blacksmith", "Merchant"],
+    "Common work": ["Beggar", "Farmer", "Stable hand", "Fisherman", "Woodcutter", "Miner", "Blacksmith", "Merchant"],
     "Military" : ["Squire", "Footman", "Veteran footman", "Knight", "Veteran knight", "Elite knight", "Holy knight", "Legendary knight"],
     "The Arcane Association" : ["Student", "Apprentice mage", "Mage", "Wizard", "Master wizard", "Chairman"]
 }
@@ -135,7 +141,7 @@ const skillCategories = {
 
 const itemCategories = {
     "Properties": ["Homeless", "Tent", "Wooden hut", "Cottage", "House", "Large house", "Small palace", "Grand palace", "Manor", "Guild hall", "Noble estate", "Royal keep", "Ancient citadel", "Sky crown palace"],
-    "Misc": ["Cheap meal", "Book", "Ledger", "Dumbbells", "Training dummy", "Meditation mat", "Personal squire", "Steel longsword", "Butler", "Sapphire charm", "Arcane focus", "Royal ledger", "Study desk", "Library"]
+    "Misc": ["Cheap meal", "Notebook", "Book", "Work gloves", "Ledger", "Fishing net", "Dumbbells", "Training dummy", "Miner's lamp", "Meditation mat", "Personal squire", "Steel longsword", "Butler", "Sapphire charm", "Arcane focus", "Royal ledger", "Study desk", "Library"]
 }
 
 const headerRowColors = {
@@ -153,7 +159,9 @@ const headerRowColors = {
 const tooltips = {
     "Beggar": "Struggle day and night for a couple of copper coins. It feels like you are at the brink of death each day.",
     "Farmer": "Plow the fields and grow the crops. It's not much but it's honest work.",
+    "Stable hand": "Clean stalls, carry feed and learn the rhythm of steady work around the town stables.",
     "Fisherman": "Reel in various fish and sell them for a handful of coins. A relaxing but still a poor paying job.",
+    "Woodcutter": "Chop timber for builders and craftsmen. The work is tiring, but the pay is steadier than fishing.",
     "Miner": "Delve into dangerous caverns and mine valuable ores. The pay is quite meager compared to the risk involved.",
     "Blacksmith": "Smelt ores and carefully forge weapons for the military. A respectable and OK paying commoner job.",
     "Merchant": "Travel from town to town, bartering fine goods. The job pays decently well and is a lot less manually-intensive.",
@@ -218,10 +226,14 @@ const tooltips = {
     "Sky crown palace": "A mythic palace above the clouds, built for a ruler who no longer belongs to ordinary life.",
 
     "Cheap meal": "Simple food that keeps you steady through the first years of training.",
+    "Notebook": "A rough notebook for tracking lessons, errands and small observations.",
     "Book": "A place to write down all your thoughts and discoveries, allowing you to learn a lot more quickly.",
+    "Work gloves": "Cheap gloves that prevent small injuries and make common labor more consistent.",
     "Ledger": "A small accounting ledger that helps catch waste before it drains your purse.",
+    "Fishing net": "A proper net that makes fishing less dependent on luck.",
     "Dumbbells": "Heavy tools used in strenuous exercise to toughen up and accumulate strength even faster than before. ",
     "Training dummy": "A battered target for repeated strikes and basic combat conditioning.",
+    "Miner's lamp": "A reliable lamp for safer and more profitable mining shifts.",
     "Meditation mat": "A quiet mat that makes daily meditation easier to keep consistent.",
     "Personal squire": "Assists you in completing day to day activities, giving you more time to be productive at work.",
     "Steel longsword": "A fine blade used to slay enemies even quicker in combat and therefore gain more experience.",
@@ -268,7 +280,10 @@ function addMultipliers() {
             task.incomeMultipliers.push(task.getLevelMultiplier.bind(task))
             task.incomeMultipliers.push(getBindedTaskEffect("Demon's wealth"))
             task.xpMultipliers.push(getBindedTaskEffect("Productivity"))
-            task.xpMultipliers.push(getBindedItemEffect("Personal squire"))    
+            task.xpMultipliers.push(getBindedItemEffect("Personal squire"))
+            if (jobCategories["Common work"].includes(task.name)) {
+                task.xpMultipliers.push(getBindedItemEffect("Work gloves"))
+            }
         } else if (task instanceof Skill) {
             task.xpMultipliers.push(getBindedTaskEffect("Concentration"))
             task.xpMultipliers.push(getBindedTaskEffect("Patience"))
@@ -287,6 +302,8 @@ function addMultipliers() {
             task.xpMultipliers.push(getBindedTaskEffect("Muscle memory"))
             task.xpMultipliers.push(getBindedItemEffect("Dumbbells"))
             task.xpMultipliers.push(getBindedItemEffect("Training dummy"))
+        } else if (task.name == "Concentration") {
+            task.xpMultipliers.push(getBindedItemEffect("Notebook"))
         } else if (task.name == "Meditation") {
             task.xpMultipliers.push(getBindedItemEffect("Meditation mat"))
         } else if (skillCategories["Magic"].includes(task.name)) {
@@ -302,6 +319,9 @@ function addMultipliers() {
         } else if (skillCategories["Dark magic"].includes(task.name)) {
             task.xpMultipliers.push(getEvil)
         }
+
+        if (task.name == "Fisherman") task.incomeMultipliers.push(getBindedItemEffect("Fishing net"))
+        if (task.name == "Miner") task.incomeMultipliers.push(getBindedItemEffect("Miner's lamp"))
     }
 
     for (itemName in gameData.itemData) {
@@ -315,18 +335,24 @@ function addMultipliers() {
 }
 
 function setCustomEffects() {
+    function expenseReduction(level, base, floor) {
+        var multiplier = 1 - getBaseLog(base, level + 1) / 10
+        return Math.max(floor, multiplier)
+    }
+
     var bargaining = gameData.taskData["Bargaining"]
     bargaining.getEffect = function() {
-        var multiplier = 1 - getBaseLog(7, bargaining.level + 1) / 10
-        if (multiplier < 0.1) {multiplier = 0.1}
-        return multiplier
+        return expenseReduction(bargaining.level, 7, 0.55)
+    }
+
+    var frugality = gameData.taskData["Frugality"]
+    frugality.getEffect = function() {
+        return expenseReduction(frugality.level, 8, 0.68)
     }
 
     var intimidation = gameData.taskData["Intimidation"]
     intimidation.getEffect = function() {
-        var multiplier = 1 - getBaseLog(7, intimidation.level + 1) / 10
-        if (multiplier < 0.1) {multiplier = 0.1}
-        return multiplier
+        return expenseReduction(intimidation.level, 6, 0.6)
     }
 
     var timeWarping = gameData.taskData["Time warping"]
@@ -1171,10 +1197,12 @@ gameData.requirements = {
     //Common work
     "Beggar": new TaskRequirement([getTaskElement("Beggar")], []),
     "Farmer": new TaskRequirement([getTaskElement("Farmer")], [{task: "Beggar", requirement: 10}]),
-    "Fisherman": new TaskRequirement([getTaskElement("Fisherman")], [{task: "Farmer", requirement: 10}]),
-    "Miner": new TaskRequirement([getTaskElement("Miner")], [{task: "Strength", requirement: 10}, {task: "Fisherman", requirement: 10}]),
-    "Blacksmith": new TaskRequirement([getTaskElement("Blacksmith")], [{task: "Strength", requirement: 30}, {task: "Miner", requirement: 10}]),
-    "Merchant": new TaskRequirement([getTaskElement("Merchant")], [{task: "Bargaining", requirement: 50}, {task: "Blacksmith", requirement: 10}]),
+    "Stable hand": new TaskRequirement([getTaskElement("Stable hand")], [{task: "Farmer", requirement: 8}]),
+    "Fisherman": new TaskRequirement([getTaskElement("Fisherman")], [{task: "Stable hand", requirement: 8}]),
+    "Woodcutter": new TaskRequirement([getTaskElement("Woodcutter")], [{task: "Strength", requirement: 8}, {task: "Fisherman", requirement: 8}]),
+    "Miner": new TaskRequirement([getTaskElement("Miner")], [{task: "Strength", requirement: 15}, {task: "Woodcutter", requirement: 10}]),
+    "Blacksmith": new TaskRequirement([getTaskElement("Blacksmith")], [{task: "Strength", requirement: 35}, {task: "Miner", requirement: 10}]),
+    "Merchant": new TaskRequirement([getTaskElement("Merchant")], [{task: "Bargaining", requirement: 45}, {task: "Blacksmith", requirement: 10}]),
 
     //Military 
     "Squire": new TaskRequirement([getTaskElement("Squire")], [{task: "Strength", requirement: 5}]),
@@ -1244,10 +1272,14 @@ gameData.requirements = {
 
     //Misc
     "Cheap meal": new CoinRequirement([getItemElement("Cheap meal")], [{requirement: 0}]),
-    "Book": new CoinRequirement([getItemElement("Book")], [{requirement: 0}]),
+    "Notebook": new CoinRequirement([getItemElement("Notebook")], [{requirement: 0}]),
+    "Book": new CoinRequirement([getItemElement("Book")], [{requirement: gameData.itemData["Book"].getExpense() * 20}]),
+    "Work gloves": new TaskRequirement([getItemElement("Work gloves")], [{task: "Farmer", requirement: 5}]),
     "Ledger": new TaskRequirement([getItemElement("Ledger")], [{task: "Frugality", requirement: 5}]),
-    "Dumbbells": new CoinRequirement([getItemElement("Dumbbells")], [{requirement: gameData.itemData["Dumbbells"].getExpense() * 100}]),
+    "Fishing net": new TaskRequirement([getItemElement("Fishing net")], [{task: "Fisherman", requirement: 3}]),
+    "Dumbbells": new CoinRequirement([getItemElement("Dumbbells")], [{requirement: gameData.itemData["Dumbbells"].getExpense() * 60}]),
     "Training dummy": new TaskRequirement([getItemElement("Training dummy")], [{task: "Strength", requirement: 15}]),
+    "Miner's lamp": new TaskRequirement([getItemElement("Miner's lamp")], [{task: "Miner", requirement: 3}]),
     "Meditation mat": new TaskRequirement([getItemElement("Meditation mat")], [{task: "Meditation", requirement: 15}]),
     "Personal squire": new CoinRequirement([getItemElement("Personal squire")], [{requirement: gameData.itemData["Personal squire"].getExpense() * 100}]),
     "Steel longsword": new CoinRequirement([getItemElement("Steel longsword")], [{requirement: gameData.itemData["Steel longsword"].getExpense() * 100}]),

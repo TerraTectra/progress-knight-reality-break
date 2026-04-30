@@ -93,12 +93,14 @@ class Item {
     getEffectDescription() {
         var description = this.baseData.description
         if (itemCategories["Properties"].includes(this.name)) description = "Happiness"
-        var text = "x" + this.baseData.effect.toFixed(1) + " " + description
+        var effectText = this.baseData.effect < 1.2 ? this.baseData.effect.toFixed(2) : this.baseData.effect.toFixed(1)
+        var text = "x" + effectText + " " + description
         return text
     }
 
     getExpense() {
-        return applyMultipliers(this.baseData.expense, this.expenseMultipliers)
+        if (this.baseData.expense <= 0) return 0
+        return Math.max(1, applyMultipliers(this.baseData.expense, this.expenseMultipliers))
     }
 }
 
