@@ -38,7 +38,8 @@ td, th { vertical-align: middle !important; }
 
 #coinDisplay { font-weight: 700; letter-spacing: 0.2px; }
 #signDisplay, #netDisplay { font-size: 17px; font-weight: 800; }
-#netDisplay { display: inline-block; padding: 1px 3px; border-radius: 2px; background: rgba(9, 160, 230, 0.08); }
+/* Net/day stays important through text weight only. No extra highlighted box. */
+#netDisplay { display: inline; padding: 0; border-radius: 0; background: transparent !important; }
 #incomeDisplay, #expenseDisplay { opacity: 0.82; }
 #quickTaskDisplay .progress-bar { box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18); }
 .requiredRow td { background: rgba(0, 0, 0, 0.08); color: #a8a8a8 !important; }
@@ -46,14 +47,17 @@ td, th { vertical-align: middle !important; }
 #evilInfo { display: none; }
 body.rb-evil-opened #evilInfo { display: inline; }
 
-/* Auto-shop must look like native automation controls, not a separate card. */
-#realityBreakAutoShop { display: inline !important; margin: 0 !important; padding: 0 !important; border: 0 !important; background: transparent !important; }
+/* Auto-shop is intentionally a compact separate block in the sidebar. */
+#realityBreakAutoShop {
+  display: block;
+  margin-top: 8px;
+  padding: 8px;
+  border: 1px solid #3c3c3c;
+  background: #252525;
+}
 #realityBreakAutoShop.locked { opacity: 0.72; }
-#realityBreakAutoShop .rb-title { display: inline !important; color: inherit !important; font-weight: normal !important; }
-#realityBreakAutoShop .rb-title::after { content: " "; }
-#realityBreakAutoShop label { display: inline !important; margin-left: 0 !important; }
-#realityBreakAutoShop label span { display: none !important; }
-#realityBreakAutoShop input { margin-left: 6px !important; vertical-align: middle !important; }
-#realityBreakAutoShop .rb-note { display: none !important; }
+#realityBreakAutoShop .rb-title { color: var(--rb-active); font-weight: 700; }
+#realityBreakAutoShop .rb-note { margin-top: 3px; color: #8f8f8f; font-size: 12px; }
+#realityBreakAutoShop input { margin-left: 6px; }
 
 #realityBreakMetaPanel { border-top: 1px solid #444; margin-top: 16px; padding-top: 8px; }
