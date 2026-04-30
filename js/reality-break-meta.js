@@ -35,6 +35,8 @@ var REALITY_BREAK_DEFAULT_META = {
     observerUnlocked: false,
     observerPoints: 0,
     observerLastAt: null,
+    passiveMpLastAt: null,
+    universeRecords: {},
     globalUpgrades: {
         stableMemory: 0,
         universalLabor: 0,
@@ -62,6 +64,7 @@ function rbLoadMeta() {
         meta.globalUpgrades = Object.assign({}, REALITY_BREAK_DEFAULT_META.globalUpgrades, parsed.globalUpgrades || {});
         if (!meta.unlockedUniverses || !meta.unlockedUniverses.length) meta.unlockedUniverses = [1];
         if (meta.currentUniverse > meta.highestUniverse) meta.highestUniverse = meta.currentUniverse;
+        if (!meta.universeRecords) meta.universeRecords = {};
         return meta;
     } catch (error) {
         return rbCloneDefaultMeta();
@@ -113,6 +116,66 @@ function rbEvilGainMultiplier() {
 function rbMetaverseGainMultiplier() {
     var meta = rbLoadMeta();
     return rbUniverseRule(meta.currentUniverse).mp;
+}
+
+function rbUniverseRecord(meta, id) {
+    if (!meta.universeRecords) meta.universeRecords = {};
+    if (!meta.universeRecords[id]) {
+        meta.universeRecords[id] = {
+            bestJobLevel: 0,
+            bestSkillLevel: 0,
+            bestEvil: 0,
+            collapses: 0,
+        };
+    }
+    return meta.universeRecords[id];
+}
+
+function rbCurrentUniversePower() {
+    if (typeof gameData === "undefined" || !gameData.taskData) return {job: 0, skill: 0, evil: 0};
+    var bestJobLevel = 0;
+    var bestSkillLevel = 0;
+    for (var taskName in gameData.taskData) {
+        var task = gameData.taskData[taskName];
+        if (task instanceof Job) bestJobLevel = Math.max(bestJobLevel, task.level || 0);
+        if (task instanceof Skill) bestSkillLevel = Math.max(bestSkillLevel, task.level || 0);
+    }
+    return {
+        job: bestJobLevel,
+        skill: bestSkillLevel,
+        evil: gameData.evil || 0,
+    };
+}
+
+function rbUpdateCurrentUniverseRecord(meta) {
+    var record = rbUniverseRecord(meta, meta.currentUniverse || 1);
+    var power = rbCurrentUniversePower();
+    record.bestJobLevel = Math.max(record.bestJobLevel || 0, power.job);
+    record.bestSkillLevel = Math.max(record.bestSkillLevel || 0, power.skill);
+    record.bestEvil = Math.max(record.bestEvil || 0, power.evil);
+    return record;
+}
+
+function rbUniversePassiveRate(meta, id) {
+    var universe = rbUniverseRule(id);
+    var record = rbUniverseRecord(meta, id);
+    var progressPower = Math.sqrt(Math.max(0, record.bestJobLevel || 0)) * 0.0025 +
+        Math.sqrt(Math.max(0, record.bestSkillLevel || 0)) * 0.0025 +
+        Math.log10(Math.max(1, (record.bestEvil || 0) + 1)) * 0.006 +
+        (record.collapses || 0) * 0.01;
+    var base = 0.002 * Math.pow(universe.id, 1.35);
+    var rate = base * universe.mp * (1 + progressPower);
+    return Math.max(0.0005, rate);
+}
+
+function rbTotalPassiveMpRate(meta) {
+    if (!meta.realityBroken) return 0;
+    var total = 0;
+    for (var i = 0; i < meta.unlockedUniverses.length; i++) {
+        total += rbUniversePassiveRate(meta, meta.unlockedUniverses[i]);
+    }
+    total *= 1 + (meta.globalUpgrades.stableMemory || 0) * 0.01;
+    return total;
 }
 
 function rbUniverseRule(id) {
@@ -261,6 +324,8 @@ function rbBreakReality() {
     meta.realityBroken = true;
     meta.breaks = (meta.breaks || 0) + 1;
     meta.unlockedAt = meta.unlockedAt || Date.now();
+    var record = rbUpdateCurrentUniverseRecord(meta);
+    record.collapses = (record.collapses || 0) + 1;
     meta.metaversePoints += rbGetMetaverseGain();
     rbSaveMeta(meta);
     rbResetCurrentRun();
@@ -291,6 +356,7 @@ function rbUnlockNextUniverse() {
 function rbEnterUniverse(id) {
     var meta = rbLoadMeta();
     if (meta.unlockedUniverses.indexOf(id) < 0 || meta.currentUniverse === id) return;
+    rbUpdateCurrentUniverseRecord(meta);
     meta.currentUniverse = id;
     rbSaveMeta(meta);
     rbResetCurrentRun();
@@ -315,6 +381,18 @@ function rbTickObserver() {
     var elapsed = Math.min(3600, Math.max(0, (now - last) / 1000));
     meta.observerPoints += elapsed * 0.1 * (1 + (meta.breaks || 0) * 0.05);
     meta.observerLastAt = now;
+    rbSaveMeta(meta);
+}
+
+function rbTickPassiveMetaverse() {
+    var meta = rbLoadMeta();
+    if (!meta.realityBroken) return;
+    var now = Date.now();
+    var last = meta.passiveMpLastAt || now;
+    var elapsed = Math.min(3600, Math.max(0, (now - last) / 1000));
+    rbUpdateCurrentUniverseRecord(meta);
+    meta.metaversePoints += rbTotalPassiveMpRate(meta) * elapsed;
+    meta.passiveMpLastAt = now;
     rbSaveMeta(meta);
 }
 
@@ -364,7 +442,8 @@ function rbUniverseHtml(meta) {
         html += '<div class="rb-universe' + (current ? ' current' : '') + (unlocked ? ' unlocked' : ' locked') + '">' +
             '<b>U-' + universe.id + ' ' + universe.name + '</b>' +
             '<div class="rb-muted">' + universe.rule + '</div>' +
-            '<div class="rb-muted">XP x' + universe.xp.toFixed(2) + ', income x' + universe.income.toFixed(2) + ', expenses x' + universe.expense.toFixed(2) + ', MP x' + universe.mp.toFixed(2) + '</div>';
+            '<div class="rb-muted">XP x' + universe.xp.toFixed(2) + ', income x' + universe.income.toFixed(2) + ', expenses x' + universe.expense.toFixed(2) + ', MP x' + universe.mp.toFixed(2) + '</div>' +
+            '<div class="rb-muted">Passive: +' + rbUniversePassiveRate(meta, universe.id).toFixed(3) + ' MP/s</div>';
         if (unlocked) {
             html += '<button class="w3-button button rb-enter-universe" data-rb-universe="' + universe.id + '"' + (current ? ' disabled' : '') + '>' + (current ? 'Current' : 'Enter') + '</button>';
         } else if (universe.id === (meta.highestUniverse || 1) + 1) {
@@ -394,11 +473,14 @@ function rbRenderRealityColumn() {
     if (!column) return;
     var meta = rbLoadMeta();
     var gain = rbGetMetaverseGain();
+    rbUpdateCurrentUniverseRecord(meta);
+    var passiveRate = rbTotalPassiveMpRate(meta);
     var html = '<h2 style="margin-top: 0">Reality Break</h2>' +
         '<div class="rb-note">Meta progression</div>' +
         '<div>Reality broken: <b>' + (meta.realityBroken ? "yes" : "no") + '</b></div>' +
         '<div>Universe: <b>' + meta.currentUniverse + '</b></div>' +
-        '<div>Metaverse points: <b>' + meta.metaversePoints + '</b></div>' +
+        '<div>Metaverse points: <b>' + meta.metaversePoints.toFixed(2) + '</b></div>' +
+        '<div>Passive MP: <b>+' + passiveRate.toFixed(3) + '/s</b></div>' +
         '<div style="margin-top: 8px; color: gray">Requirements: ' + rbMissingRealityRequirementsText() + '</div>' +
         '<div style="margin-top: 4px">Estimated gain: <b>' + gain + ' MP</b></div>' +
         '<button id="rbBreakRealityButton" class="w3-button button" style="margin-top: 8px" ' + (rbCanBreakReality() ? "" : "disabled") + '>Break reality</button>';
@@ -460,6 +542,7 @@ function rbInstallRealityBreakMeta() {
     setInterval(function() {
         rbInstallAdminSpeedPatch();
         rbInstallMetaEffectPatch();
+        rbTickPassiveMetaverse();
         rbTickObserver();
         rbRenderRealityColumn();
     }, 1000);

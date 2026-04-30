@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>Multiverse Tab Preview</title>
+  <style>
+    body {
+      margin: 0;
+      background: #202020;
+      color: #f4f4f4;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    .page {
+      width: 1220px;
+      margin: 16px;
+    }
+
+    h1 {
+      margin: 0 0 12px;
+      font-size: 32px;
+      font-weight: 500;
+    }
+
+    .sidebar,
+    .tabs,
+    .content {
+      background: #2c2c2c;
+      border: 1px solid #151515;
+      box-shadow: 0 8px 22px rgba(0, 0, 0, 0.18);
+    }
+
+    .sidebar {
+      float: left;
+      width: 300px;
+      min-height: 610px;
+      padding: 12px;
+      box-sizing: border-box;
+    }
+
+    .main {
+      float: left;
+      width: 900px;
+      margin-left: 16px;
+    }
+
+    .tabs {
+      min-height: 40px;
+      margin-bottom: 16px;
+      overflow: hidden;
+    }
+
+    .tab {
+      display: inline-block;
+      padding: 10px 16px;
+      border-right: 1px solid rgba(255, 255, 255, 0.04);
+      color: #e8e8e8;
+    }
+
+    .tab.active {
+      background: #607d8b;
+      color: #fff;
+      box-shadow: inset 0 -2px 0 rgba(255,255,255,.15);
+    }
+
+    .content {
+      padding: 14px;
+      min-height: 554px;
+    }
+
+    .stat {
+      margin-bottom: 8px;
+      font-size: 16px;
+    }
+
+    .muted {
+      color: #9a9a9a;
+      font-size: 12px;
+    }
+
+    .net {
+      color: #09a0e6;
+      font-weight: 700;
+    }
+
+    .income {
+      color: #1bb954;
+    }
+
+    .expense {
+      color: #df3a32;
+    }
+
+    .section-title {
+      background: #875f9a;
+      color: white;
+      padding: 8px 10px;
+      font-size: 18px;
+      margin-bottom: 10px;
+    }
+
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .summary-card,
+    .universe,
+    .upgrade {
+      border: 1px solid #3f3f3f;
+      background: #262626;
+      padding: 9px;
+    }
+
+    .summary-card b {
+      color: #e1a500;
+      font-size: 18px;
+    }
+
+    .universe-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+
+    .universe.current {
+      border-color: rgb(225, 165, 0);
+      background: rgba(225, 165, 0, 0.08);
+    }
+
+    .universe.locked {
+      opacity: 0.65;
+    }
+
+    .universe-title {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      font-weight: 700;
+      margin-bottom: 5px;
+    }
+
+    .badge {
+      color: #e1a500;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .rule {
+      min-height: 30px;
+      color: #cfcfcf;
+      font-size: 13px;
+      margin-bottom: 6px;
+    }
+
+    .numbers {
+      color: #9a9a9a;
+      font-size: 12px;
+      margin-bottom: 6px;
+    }
+
+    button {
+      border: 1px solid #dedede;
+      background: #242424;
+      color: #fff;
+      padding: 6px 10px;
+      cursor: default;
+    }
+
+    button.primary {
+      border-color: rgb(225, 165, 0);
+      color: rgb(225, 165, 0);
+    }
+
+    .upgrades {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .clearfix::after {
+      content: "";
+      display: block;
+      clear: both;
+    }
+  </style>
+</head>
+<body>
+  <div class="page clearfix">
+    <h1>Progress Knight</h1>
+
+    <aside class="sidebar">
+      <div class="stat">Age <b>34</b> Day <b>112</b></div>
+      <div class="muted">Lifespan: 86 years</div>
+      <br>
+      <div class="stat">Balance: <b style="color:#e5c100">18.4g</b></div>
+      <ul>
+        <li><span class="net">Net/day:</span> <b>+2.3g</b></li>
+        <li><span class="income">Income/day:</span> 4.8g</li>
+        <li><span class="expense">Expense/day:</span> 2.5g</li>
+      </ul>
+      <br>
+      <div class="stat">Current job</div>
+      <div class="muted">Merchant lvl 42</div>
+      <div class="stat">Current skill</div>
+      <div class="muted">Time warping lvl 28</div>
+      <br>
+      <div class="stat">Evil: <b style="color:#df3a32">146</b></div>
+      <div class="muted">Visible only after Evil is unlocked.</div>
+    </aside>
+
+    <main class="main">
+      <nav class="tabs">
+        <span class="tab">Jobs</span>
+        <span class="tab">Skills</span>
+        <span class="tab">Shop</span>
+        <span class="tab">Amulet</span>
+        <span class="tab active">Multiverse</span>
+        <span class="tab" style="float:right">Settings</span>
+      </nav>
+
+      <section class="content">
+        <div class="section-title">Multiverse</div>
+
+        <div class="summary">
+          <div class="summary-card"><div class="muted">Metaverse Points</div><b>128.42</b></div>
+          <div class="summary-card"><div class="muted">Passive income</div><b>+0.184/s</b></div>
+          <div class="summary-card"><div class="muted">Current universe</div><b>U-II</b></div>
+          <div class="summary-card"><div class="muted">Highest reached</div><b>U-IV</b></div>
+        </div>
+
+        <div class="universe-grid">
+          <div class="universe">
+            <div class="universe-title"><span>U-I Prime World</span><span class="badge">Unlocked</span></div>
+            <div class="rule">Original Progress Knight rules. Low passive MP, but easy to improve.</div>
+            <div class="numbers">XP x1.00 · income x1.00 · expenses x1.00 · passive +0.012 MP/s</div>
+            <button>Enter</button>
+          </div>
+
+          <div class="universe current">
+            <div class="universe-title"><span>U-II Strained Kingdom</span><span class="badge">Current</span></div>
+            <div class="rule">Guild paperwork slows progress and taxes bite harder.</div>
+            <div class="numbers">XP x0.95 · income x0.90 · expenses x1.10 · passive +0.038 MP/s</div>
+            <button class="primary">Current</button>
+          </div>
+
+          <div class="universe">
+            <div class="universe-title"><span>U-III Taxed Crown</span><span class="badge">Unlocked</span></div>
+            <div class="rule">Comfort costs more; economy planning matters earlier.</div>
+            <div class="numbers">XP x0.90 · income x0.84 · expenses x1.22 · passive +0.071 MP/s</div>
+            <button>Enter</button>
+          </div>
+
+          <div class="universe">
+            <div class="universe-title"><span>U-IV Slow Hourglass</span><span class="badge">Unlocked</span></div>
+            <div class="rule">Time feels heavier; skill routing becomes important.</div>
+            <div class="numbers">XP x0.82 · income x0.88 · expenses x1.28 · passive +0.116 MP/s</div>
+            <button>Enter</button>
+          </div>
+
+          <div class="universe locked">
+            <div class="universe-title"><span>U-V War Ledger</span><span class="badge">180 MP</span></div>
+            <div class="rule">Military paths strain the realm, but collapse rewards grow.</div>
+            <div class="numbers">XP x0.78 · income x0.82 · expenses x1.38 · passive locked</div>
+            <button>Unlock</button>
+          </div>
+
+          <div class="universe locked">
+            <div class="universe-title"><span>U-X Reality Soup</span><span class="badge">Observer</span></div>
+            <div class="rule">The final universe is unstable enough to reveal the Observer.</div>
+            <div class="numbers">XP x0.50 · income x0.62 · expenses x2.50 · passive locked</div>
+            <button disabled>Locked</button>
+          </div>
+        </div>
+
+        <div class="upgrades">
+          <div class="upgrade"><b>Stable Memory</b><div class="muted">Global XP. Helps every universe scale its passive MP.</div></div>
+          <div class="upgrade"><b>Universal Labor</b><div class="muted">Income. Helps push deeper distorted universes.</div></div>
+        </div>
+      </section>
+    </main>
+  </div>
+</body>
+</html>
