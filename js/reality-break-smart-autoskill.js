@@ -1,5 +1,6 @@
 // Reality Break Smart Auto-learn.
-// Replaces the original rough auto-learn priority with a safer planner that considers unlocks, quick levels and useful passive bonuses.
+// Replaces the original auto-learn priority with a planner that considers unlocks, quick levels and useful passive bonuses.
+// The original game still calls setTask() from its own automation loop, so this script intercepts skill picks too.
 
 function rbSkillIsVisible(skillName) {
   var row = document.getElementById("row " + skillName);
@@ -12,6 +13,16 @@ function rbSkillIsSkipped(skillName) {
   if (!row) return false;
   var checkbox = row.getElementsByClassName("checkbox")[0];
   return !!(checkbox && checkbox.checked);
+}
+
+function rbIsSkillName(taskName) {
+  if (typeof gameData === "undefined" || !gameData.taskData || !gameData.taskData[taskName]) return false;
+  return gameData.taskData[taskName] instanceof Skill;
+}
+
+function rbAutoLearnEnabled() {
+  var autoLearn = document.getElementById("autoLearn");
+  return !!(autoLearn && autoLearn.checked);
 }
 
 function rbAvailableSkills() {
@@ -47,14 +58,10 @@ function rbNextTargetForSkill(skill) {
 
 function rbXpToTarget(skill, target) {
   var need = Math.max(0, skill.getMaxXp() - skill.xp);
-
   function maxXpAt(level) {
     return Math.round(skill.baseData.maxXp * (level + 1) * Math.pow(1.01, level));
   }
-
-  for (var level = skill.level + 1; level < target; level++) {
-    need += maxXpAt(level);
-  }
+  for (var level = skill.level + 1; level < target; level++) need += maxXpAt(level);
   return need;
 }
 
@@ -147,11 +154,38 @@ function rbPickSmartSkillPlan() {
   return best;
 }
 
+function rbSetSkillWithoutIntercept(skillName) {
+  if (!skillName) return;
+  var originalSetTask = window.__rbOriginalSetTask || window.setTask || setTask;
+  window.__rbSmartAutoLearnBypass = true;
+  try { originalSetTask(skillName); }
+  finally { window.__rbSmartAutoLearnBypass = false; }
+}
+
+function rbInstallSetTaskInterceptor() {
+  if (typeof setTask !== "function") return;
+  if (window.__rbSmartSetTaskInstalled && window.__rbOriginalSetTask) return;
+
+  window.__rbOriginalSetTask = window.__rbOriginalSetTask || setTask;
+  var originalSetTask = window.__rbOriginalSetTask;
+
+  setTask = function(taskName) {
+    if (!window.__rbSmartAutoLearnBypass && rbAutoLearnEnabled() && rbIsSkillName(taskName)) {
+      var plan = rbPickSmartSkillPlan();
+      if (plan && plan.skill && plan.skill.name) return originalSetTask(plan.skill.name);
+    }
+    return originalSetTask(taskName);
+  };
+
+  window.setTask = setTask;
+  window.__rbSmartSetTaskInstalled = true;
+}
+
 function rbSmartAutoLearnTick() {
-  var autoLearn = document.getElementById("autoLearn");
-  if (!autoLearn || !autoLearn.checked || typeof setTask !== "function") return;
+  if (!rbAutoLearnEnabled()) return;
+  rbInstallSetTaskInterceptor();
   var plan = rbPickSmartSkillPlan();
-  if (plan && gameData.currentSkill !== plan.skill) setTask(plan.skill.name);
+  if (plan && gameData.currentSkill !== plan.skill) rbSetSkillWithoutIntercept(plan.skill.name);
 }
 
 function rbFormatDays(days) {
@@ -185,11 +219,16 @@ function rbUpdateSmartAutoLearnUi() {
 
 function installRealityBreakSmartAutoLearn() {
   rbInstallSmartAutoLearnUi();
-  setInterval(function() {
-    rbInstallSmartAutoLearnUi();
-    rbUpdateSmartAutoLearnUi();
-    rbSmartAutoLearnTick();
-  }, 500);
+  rbInstallSetTaskInterceptor();
+  if (!window.__rbSmartAutoLearnInterval) {
+    window.__rbSmartAutoLearnInterval = setInterval(function() {
+      rbInstallSmartAutoLearnUi();
+      rbInstallSetTaskInterceptor();
+      rbUpdateSmartAutoLearnUi();
+      rbSmartAutoLearnTick();
+    }, 200);
+  }
 }
 
+installRealityBreakSmartAutoLearn();
 window.addEventListener("load", installRealityBreakSmartAutoLearn);
