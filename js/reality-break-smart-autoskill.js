@@ -1,6 +1,6 @@
 // Reality Break Smart Auto-learn.
 // Current rule: train all visible/unlocked skills evenly by real time-to-next-5-level checkpoint.
-// No unlock chasing. Every selected skill is kept until the next level divisible by 5.
+// No unlock chasing. A selected skill is held only until it reaches the nearest x5 checkpoint, then rotation continues.
 
 function rbTaskRow(taskName) {
   return document.getElementById("row " + taskName);
@@ -73,6 +73,10 @@ function rbNextMultipleOfFive(level) {
   return Math.floor((level || 0) / 5) * 5 + 5;
 }
 
+function rbIsAtFiveCheckpoint(skill) {
+  return (skill.level || 0) > 0 && (skill.level || 0) % 5 === 0;
+}
+
 function rbXpToTarget(skill, target) {
   var need = Math.max(0, skill.getMaxXp() - skill.xp);
   function maxXpAt(level) {
@@ -100,8 +104,9 @@ function rbPickEvenSkillPlan() {
   var current = gameData.currentSkill;
   var currentPlan = current ? plans.find(function(plan) { return plan.skill.name === current.name; }) : null;
 
-  // Hard rule: once selected, finish the next x5 checkpoint before switching.
-  if (currentPlan && current.level < currentPlan.target) return currentPlan;
+  // Hold the current skill only while it is inside a 5-level block.
+  // As soon as it reaches lvl 5/10/15/etc, release it and rotate to the most behind block.
+  if (currentPlan && !rbIsAtFiveCheckpoint(current) && current.level < currentPlan.target) return currentPlan;
 
   var minBlock = Math.min.apply(null, plans.map(function(plan) { return plan.block; }));
   var lowestBlock = plans.filter(function(plan) { return plan.block === minBlock; });
