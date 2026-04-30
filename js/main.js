@@ -663,10 +663,14 @@ function updateRequiredRows(data, categoryType) {
                 if (requirementObject instanceof EvilRequirement) {
                     evilElement.classList.remove("hiddenTask")
                     evilElement.textContent = format(requirements[0].requirement) + " evil"
+                } else if (typeof RealityRequirement !== "undefined" && requirementObject instanceof RealityRequirement) {
+                    levelElement.classList.remove("hiddenTask")
+                    levelElement.textContent = " Reality Break"
                 } else {
                     levelElement.classList.remove("hiddenTask")
                     for (requirement of requirements) {
                         var task = gameData.taskData[requirement.task]
+                        if (!task) continue
                         if (task.level >= requirement.requirement) continue
                         var text = " " + requirement.task + " level " + format(task.level) + "/" + format(requirement.requirement) + ","
                         finalText += text
