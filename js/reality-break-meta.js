@@ -39,15 +39,22 @@ function saveRealityBreakMeta(meta) {
   localStorage.setItem(REALITY_BREAK_SAVE_KEY, JSON.stringify({ ...cloneRealityBreakDefaultMeta(), ...meta }));
 }
 
+function realityBreakGameSpeed() {
+  if (typeof gameData === "undefined") return 0;
+  const timeWarping = gameData.taskData?.["Time warping"];
+  const timeWarpingSpeed = gameData.timeWarpingEnabled && timeWarping ? timeWarping.getEffect() : 1;
+  const alive = typeof isAlive === "function" ? +isAlive() : 1;
+  return REALITY_BREAK_BASE_GAME_SPEED * +!gameData.paused * alive * timeWarpingSpeed;
+}
+
 function installRealityBreakSpeedTuning() {
   if (typeof window === "undefined") return;
-  window.getGameSpeed = function getRealityBreakGameSpeed() {
-    if (typeof gameData === "undefined") return 0;
-    const timeWarping = gameData.taskData?.["Time warping"];
-    const timeWarpingSpeed = gameData.timeWarpingEnabled && timeWarping ? timeWarping.getEffect() : 1;
-    const alive = typeof isAlive === "function" ? +isAlive() : 1;
-    return REALITY_BREAK_BASE_GAME_SPEED * +!gameData.paused * alive * timeWarpingSpeed;
-  };
+  try {
+    getGameSpeed = realityBreakGameSpeed;
+  } catch {
+    window.getGameSpeed = realityBreakGameSpeed;
+  }
+  window.getGameSpeed = realityBreakGameSpeed;
 }
 
 function canBreakReality() {
@@ -103,7 +110,8 @@ function installRealityBreakMetaScaffold() {
   setInterval(() => {
     installRealityBreakSpeedTuning();
     updateRealityBreakMetaPanel();
-  }, 1000);
+  }, 250);
 }
 
+installRealityBreakSpeedTuning();
 window.addEventListener("load", installRealityBreakMetaScaffold);
