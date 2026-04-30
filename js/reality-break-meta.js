@@ -1,5 +1,5 @@
 // Reality Break meta-layer scaffold.
-// Kept separate from original Progress Knight logic so the fork stays clean and upstream-friendly.
+// Deployed from gh-pages. Keep this file self-contained and safe for the original Progress Knight runtime.
 
 const REALITY_BREAK_SAVE_KEY = "progress-knight-reality-break-meta-v1";
 const REALITY_BREAK_BASE_GAME_SPEED = 20;
@@ -39,22 +39,35 @@ function saveRealityBreakMeta(meta) {
   localStorage.setItem(REALITY_BREAK_SAVE_KEY, JSON.stringify({ ...cloneRealityBreakDefaultMeta(), ...meta }));
 }
 
+function realityBreakTimeWarpSpeed() {
+  if (typeof gameData === "undefined") return 1;
+  const timeWarping = gameData.taskData?.["Time warping"];
+  return gameData.timeWarpingEnabled && timeWarping ? timeWarping.getEffect() : 1;
+}
+
+function realityBreakAliveFlag() {
+  return typeof isAlive === "function" ? +isAlive() : 1;
+}
+
 function realityBreakGameSpeed() {
   if (typeof gameData === "undefined") return 0;
-  const timeWarping = gameData.taskData?.["Time warping"];
-  const timeWarpingSpeed = gameData.timeWarpingEnabled && timeWarping ? timeWarping.getEffect() : 1;
-  const alive = typeof isAlive === "function" ? +isAlive() : 1;
-  return REALITY_BREAK_BASE_GAME_SPEED * +!gameData.paused * alive * timeWarpingSpeed;
+  return REALITY_BREAK_BASE_GAME_SPEED * +!gameData.paused * realityBreakAliveFlag() * realityBreakTimeWarpSpeed();
+}
+
+function realityBreakApplySpeed(value) {
+  const speed = realityBreakGameSpeed();
+  const divisor = typeof updateSpeed === "number" ? updateSpeed : 20;
+  return value * speed / divisor;
 }
 
 function installRealityBreakSpeedTuning() {
   if (typeof window === "undefined") return;
-  try {
-    getGameSpeed = realityBreakGameSpeed;
-  } catch {
-    window.getGameSpeed = realityBreakGameSpeed;
-  }
+
+  try { getGameSpeed = realityBreakGameSpeed; } catch {}
+  try { applySpeed = realityBreakApplySpeed; } catch {}
+
   window.getGameSpeed = realityBreakGameSpeed;
+  window.applySpeed = realityBreakApplySpeed;
 }
 
 function canBreakReality() {
