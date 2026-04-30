@@ -1,10 +1,10 @@
 // Reality Break meta-layer scaffold.
 // Deployed from gh-pages. Keep this file self-contained and safe for the original Progress Knight runtime.
 
-const REALITY_BREAK_SAVE_KEY = "progress-knight-reality-break-meta-v1";
-const REALITY_BREAK_BASE_GAME_SPEED = 20;
+var REALITY_BREAK_SAVE_KEY = "progress-knight-reality-break-meta-v1";
+var REALITY_BREAK_BASE_GAME_SPEED = 20;
 
-const REALITY_BREAK_DEFAULT_META = {
+var REALITY_BREAK_DEFAULT_META = {
   version: 1,
   realityBroken: false,
   highestUniverse: 1,
@@ -27,7 +27,7 @@ function cloneRealityBreakDefaultMeta() {
 
 function loadRealityBreakMeta() {
   try {
-    const raw = localStorage.getItem(REALITY_BREAK_SAVE_KEY);
+    var raw = localStorage.getItem(REALITY_BREAK_SAVE_KEY);
     if (!raw) return cloneRealityBreakDefaultMeta();
     return { ...cloneRealityBreakDefaultMeta(), ...JSON.parse(raw) };
   } catch {
@@ -41,7 +41,7 @@ function saveRealityBreakMeta(meta) {
 
 function realityBreakTimeWarpSpeed() {
   if (typeof gameData === "undefined") return 1;
-  const timeWarping = gameData.taskData?.["Time warping"];
+  var timeWarping = gameData.taskData && gameData.taskData["Time warping"];
   return gameData.timeWarpingEnabled && timeWarping ? timeWarping.getEffect() : 1;
 }
 
@@ -55,44 +55,42 @@ function realityBreakGameSpeed() {
 }
 
 function realityBreakApplySpeed(value) {
-  const speed = realityBreakGameSpeed();
-  const divisor = typeof updateSpeed === "number" ? updateSpeed : 20;
-  return value * speed / divisor;
+  var divisor = typeof updateSpeed === "number" ? updateSpeed : 20;
+  return value * realityBreakGameSpeed() / divisor;
 }
 
 function installRealityBreakSpeedTuning() {
   if (typeof window === "undefined") return;
-
-  try { getGameSpeed = realityBreakGameSpeed; } catch {}
-  try { applySpeed = realityBreakApplySpeed; } catch {}
-
+  try { getGameSpeed = realityBreakGameSpeed; } catch (error) {}
+  try { applySpeed = realityBreakApplySpeed; } catch (error) {}
   window.getGameSpeed = realityBreakGameSpeed;
   window.applySpeed = realityBreakApplySpeed;
 }
 
 function canBreakReality() {
   if (typeof gameData === "undefined") return false;
-  const evil = gameData.evil || 0;
-  const chairman = gameData.taskData?.Chairman?.level || 0;
-  const timeWarping = gameData.taskData?.["Time warping"]?.level || 0;
-  const superImmortality = gameData.taskData?.["Super immortality"]?.level || 0;
+  var evil = gameData.evil || 0;
+  var chairman = (gameData.taskData && gameData.taskData.Chairman && gameData.taskData.Chairman.level) || 0;
+  var timeWarping = (gameData.taskData && gameData.taskData["Time warping"] && gameData.taskData["Time warping"].level) || 0;
+  var superImmortality = (gameData.taskData && gameData.taskData["Super immortality"] && gameData.taskData["Super immortality"].level) || 0;
   return evil >= 1200 && chairman >= 10 && timeWarping >= 100 && superImmortality >= 35;
 }
 
 function getRealityBreakMetaverseGain() {
   if (typeof gameData === "undefined") return 0;
-  const evil = gameData.evil || 0;
-  const highestJobLevel = Math.max(...Object.values(gameData.taskData || {}).filter((task) => task instanceof Job).map((task) => task.level || 0), 0);
-  const highestSkillLevel = Math.max(...Object.values(gameData.taskData || {}).filter((task) => task instanceof Skill).map((task) => task.level || 0), 0);
+  var evil = gameData.evil || 0;
+  var tasks = Object.values(gameData.taskData || {});
+  var highestJobLevel = Math.max.apply(null, [0].concat(tasks.filter(function(task) { return task instanceof Job; }).map(function(task) { return task.level || 0; })));
+  var highestSkillLevel = Math.max.apply(null, [0].concat(tasks.filter(function(task) { return task instanceof Skill; }).map(function(task) { return task.level || 0; })));
   return Math.max(0, Math.floor(Math.sqrt(evil) + highestJobLevel / 20 + highestSkillLevel / 25));
 }
 
 function installRealityBreakMetaPanel() {
-  const meta = loadRealityBreakMeta();
-  const settings = document.getElementById("settings");
+  var meta = loadRealityBreakMeta();
+  var settings = document.getElementById("settings");
   if (!settings || document.getElementById("realityBreakMetaPanel")) return;
 
-  const wrapper = document.createElement("li");
+  var wrapper = document.createElement("li");
   wrapper.id = "realityBreakMetaPanel";
   wrapper.innerHTML = `
     <h2>Reality Break</h2>
@@ -109,9 +107,9 @@ function installRealityBreakMetaPanel() {
 }
 
 function updateRealityBreakMetaPanel() {
-  const hint = document.getElementById("rbBreakHint");
+  var hint = document.getElementById("rbBreakHint");
   if (!hint) return;
-  const gain = getRealityBreakMetaverseGain();
+  var gain = getRealityBreakMetaverseGain();
   hint.textContent = canBreakReality()
     ? `Reality Break is ready. Estimated collapse gain: ${gain} MP.`
     : "Reality Break locked. Progress through Evil, Chairman, Time warping and Super immortality first.";
@@ -120,10 +118,12 @@ function updateRealityBreakMetaPanel() {
 function installRealityBreakMetaScaffold() {
   installRealityBreakSpeedTuning();
   installRealityBreakMetaPanel();
-  setInterval(() => {
-    installRealityBreakSpeedTuning();
-    updateRealityBreakMetaPanel();
-  }, 250);
+  if (!window.__realityBreakMetaInterval) {
+    window.__realityBreakMetaInterval = setInterval(function() {
+      installRealityBreakSpeedTuning();
+      updateRealityBreakMetaPanel();
+    }, 250);
+  }
 }
 
 installRealityBreakSpeedTuning();
