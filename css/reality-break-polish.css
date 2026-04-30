@@ -14,151 +14,46 @@
   --rb-blue: #2d8dda;
 }
 
-body.dark {
-  background: var(--rb-bg);
-  color: var(--rb-text);
-}
+body.dark { background: var(--rb-bg); color: var(--rb-text); }
+h1 { margin-top: 0; color: #f5f5f5; letter-spacing: 0.2px; text-shadow: 0 2px 12px rgba(0, 0, 0, 0.35); }
+.panel { background: var(--rb-panel) !important; border: 1px solid var(--rb-border) !important; box-shadow: 0 8px 22px rgba(0, 0, 0, 0.18); }
 
-h1 {
-  margin-top: 0;
-  color: #f5f5f5;
-  letter-spacing: 0.2px;
-  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
-}
+/* The original tab bar has inline height: 40px. Our polish padding made tabs leak out; force auto height. */
+.panel.w3-margin-left[style*="height: 40px"] { height: auto !important; min-height: 40px !important; overflow: visible !important; padding-bottom: 0 !important; }
+.panel.w3-margin-left[style*="height: 40px"] .tabButton { min-height: 38px !important; display: inline-flex !important; align-items: center !important; justify-content: center !important; padding-top: 7px !important; padding-bottom: 7px !important; }
 
-.panel {
-  background: var(--rb-panel) !important;
-  border: 1px solid var(--rb-border) !important;
-  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.18);
-}
+.tabButton { transition: background-color 0.12s ease, color 0.12s ease, box-shadow 0.12s ease; border-right: 1px solid rgba(255, 255, 255, 0.03); }
+.tabButton:hover { background: #3a3a3a !important; }
+.tabButton.w3-blue-gray { background: #607d8b !important; box-shadow: inset 0 -2px 0 rgba(255, 255, 255, 0.12); }
+.button, .item-button { border: 1px solid #dedede !important; background: #242424 !important; color: #ffffff !important; transition: border-color 0.12s ease, background-color 0.12s ease; }
+.button:hover, .item-button:hover { border-color: var(--rb-active) !important; background: #363636 !important; }
 
-.tabButton {
-  transition: background-color 0.12s ease, color 0.12s ease, box-shadow 0.12s ease;
-  border-right: 1px solid rgba(255, 255, 255, 0.03);
-}
+table.w3-table { border-collapse: separate; border-spacing: 0; }
+tr.headerRow th { font-size: 16px; padding-top: 8px !important; padding-bottom: 8px !important; }
+td, th { vertical-align: middle !important; }
+.progress-bar { border-radius: 0; overflow: hidden; background: #1b1b1b; border: 1px solid rgba(255, 255, 255, 0.04); }
+.progress-bar:hover { box-shadow: 0 0 0 1px rgba(225, 165, 0, 0.28); }
+.progress-fill { transition: width 0.18s linear; }
+.progress-text { text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6); }
 
-.tabButton:hover {
-  background: #3a3a3a !important;
-}
+#coinDisplay { font-weight: 700; letter-spacing: 0.2px; }
+#signDisplay, #netDisplay { font-size: 17px; font-weight: 800; }
+#netDisplay { display: inline-block; padding: 1px 3px; border-radius: 2px; background: rgba(9, 160, 230, 0.08); }
+#incomeDisplay, #expenseDisplay { opacity: 0.82; }
+#quickTaskDisplay .progress-bar { box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18); }
+.requiredRow td { background: rgba(0, 0, 0, 0.08); color: #a8a8a8 !important; }
 
-.tabButton.w3-blue-gray {
-  background: #607d8b !important;
-  box-shadow: inset 0 -2px 0 rgba(255, 255, 255, 0.12);
-}
+#evilInfo { display: none; }
+body.rb-evil-opened #evilInfo { display: inline; }
 
-.button, .item-button {
-  border: 1px solid #dedede !important;
-  background: #242424 !important;
-  color: #ffffff !important;
-  transition: border-color 0.12s ease, background-color 0.12s ease;
-}
+/* Auto-shop must look like native automation controls, not a separate card. */
+#realityBreakAutoShop { display: inline !important; margin: 0 !important; padding: 0 !important; border: 0 !important; background: transparent !important; }
+#realityBreakAutoShop.locked { opacity: 0.72; }
+#realityBreakAutoShop .rb-title { display: inline !important; color: inherit !important; font-weight: normal !important; }
+#realityBreakAutoShop .rb-title::after { content: " "; }
+#realityBreakAutoShop label { display: inline !important; margin-left: 0 !important; }
+#realityBreakAutoShop label span { display: none !important; }
+#realityBreakAutoShop input { margin-left: 6px !important; vertical-align: middle !important; }
+#realityBreakAutoShop .rb-note { display: none !important; }
 
-.button:hover, .item-button:hover {
-  border-color: var(--rb-active) !important;
-  background: #363636 !important;
-}
-
-table.w3-table {
-  border-collapse: separate;
-  border-spacing: 0;
-}
-
-tr.headerRow th {
-  font-size: 16px;
-  padding-top: 8px !important;
-  padding-bottom: 8px !important;
-}
-
-td, th {
-  vertical-align: middle !important;
-}
-
-.progress-bar {
-  border-radius: 0;
-  overflow: hidden;
-  background: #1b1b1b;
-  border: 1px solid rgba(255, 255, 255, 0.04);
-}
-
-.progress-bar:hover {
-  box-shadow: 0 0 0 1px rgba(225, 165, 0, 0.28);
-}
-
-.progress-fill {
-  transition: width 0.18s linear;
-}
-
-.progress-text {
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
-}
-
-#coinDisplay {
-  font-weight: 700;
-  letter-spacing: 0.2px;
-}
-
-#signDisplay, #netDisplay {
-  font-size: 17px;
-  font-weight: 800;
-}
-
-#netDisplay {
-  display: inline-block;
-  padding: 1px 3px;
-  border-radius: 2px;
-  background: rgba(9, 160, 230, 0.08);
-}
-
-#incomeDisplay, #expenseDisplay {
-  opacity: 0.82;
-}
-
-#quickTaskDisplay .progress-bar {
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
-}
-
-.requiredRow td {
-  background: rgba(0, 0, 0, 0.08);
-  color: #a8a8a8 !important;
-}
-
-#evilInfo {
-  display: none;
-}
-
-body.rb-evil-opened #evilInfo {
-  display: inline;
-}
-
-#realityBreakAutoShop {
-  display: block;
-  margin-top: 8px;
-  padding: 8px;
-  border: 1px solid #3c3c3c;
-  background: #252525;
-}
-
-#realityBreakAutoShop.locked {
-  opacity: 0.72;
-}
-
-#realityBreakAutoShop .rb-title {
-  color: var(--rb-active);
-  font-weight: 700;
-}
-
-#realityBreakAutoShop .rb-note {
-  margin-top: 3px;
-  color: #8f8f8f;
-  font-size: 12px;
-}
-
-#realityBreakAutoShop input {
-  margin-left: 6px;
-}
-
-#realityBreakMetaPanel {
-  border-top: 1px solid #444;
-  margin-top: 16px;
-  padding-top: 8px;
-}
+#realityBreakMetaPanel { border-top: 1px solid #444; margin-top: 16px; padding-top: 8px; }
