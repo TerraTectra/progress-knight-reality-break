@@ -1,7 +1,7 @@
 // Reality Break Smart Auto-learn.
-// Full replacement for original auto-learn.
-// The original game stores a reference to #autoLearn early, so we detach that checkbox,
-// keep it permanently off, and use our own visible smart checkbox instead.
+// Priority rule:
+// 1) Train skills needed for the next visible unlocks.
+// 2) If no unlock skill is currently needed, train all visible skills evenly.
 
 function rbTaskRow(taskName) {
   return document.getElementById("row " + taskName);
@@ -20,10 +20,6 @@ function rbTaskIsUnlocked(taskName) {
   return !req || req.isCompleted();
 }
 
-function rbSkillIsVisible(skillName) {
-  return rbTaskIsVisible(skillName);
-}
-
 function rbSkillIsSkipped(skillName) {
   var row = rbTaskRow(skillName);
   if (!row) return false;
@@ -31,19 +27,13 @@ function rbSkillIsSkipped(skillName) {
   return !!(checkbox && checkbox.checked);
 }
 
-function rbIsSkillName(taskName) {
-  if (typeof gameData === "undefined" || !gameData.taskData || !gameData.taskData[taskName]) return false;
-  return gameData.taskData[taskName] instanceof Skill;
-}
-
-function rbTaskLevel(taskName) {
-  var task = gameData && gameData.taskData && gameData.taskData[taskName];
-  return task ? task.level || 0 : 0;
+function rbSkillLevel(skillName) {
+  var skill = gameData && gameData.taskData && gameData.taskData[skillName];
+  return skill ? skill.level || 0 : 0;
 }
 
 function rbDetachOriginalAutoLearn() {
   if (window.__rbSmartAutoLearnDetached) return;
-
   var original = document.getElementById("autoLearn");
   if (!original) return;
 
@@ -61,7 +51,7 @@ function rbDetachOriginalAutoLearn() {
   window.__rbSmartAutoLearnDetached = true;
 }
 
-function rbKeepOriginalAutoLearnDisabled() {
+function rbKeepOriginalAutoLearnOff() {
   var original = window.__rbOriginalAutoLearnCheckbox || document.getElementById("autoLearn");
   if (original) {
     original.checked = false;
@@ -71,7 +61,7 @@ function rbKeepOriginalAutoLearnDisabled() {
 
 function rbAutoLearnEnabled() {
   rbDetachOriginalAutoLearn();
-  rbKeepOriginalAutoLearnDisabled();
+  rbKeepOriginalAutoLearnOff();
   var smart = window.__rbSmartAutoLearnCheckbox || document.getElementById("rbSmartAutoLearn");
   return !!(smart && smart.checked);
 }
@@ -81,44 +71,50 @@ function rbAvailableSkills() {
   return Object.values(gameData.taskData)
     .filter(function(task) { return task instanceof Skill; })
     .filter(function(skill) { return rbTaskIsUnlocked(skill.name); })
-    .filter(function(skill) { return rbSkillIsVisible(skill.name); })
+    .filter(function(skill) { return rbTaskIsVisible(skill.name); })
     .filter(function(skill) { return !rbSkillIsSkipped(skill.name); });
 }
 
-function rbRequirementCanBeWorkedToward(req, focusedSkillName) {
+function rbRequirementReachableNow(req, focusSkillName) {
   if (!req || !req.requirements) return false;
-
   return req.requirements.every(function(part) {
     if (!part.task) return true;
-    if (part.task === focusedSkillName) return true;
-    if (rbTaskLevel(part.task) >= part.requirement) return true;
+    if (part.task === focusSkillName) return true;
+    if (rbSkillLevel(part.task) >= part.requirement) return true;
     return rbTaskIsUnlocked(part.task) && rbTaskIsVisible(part.task);
   });
 }
 
-function rbRequirementTargetsForSkill(skillName) {
-  var targets = [5, 10, 15, 25, 40, 50, 75, 100, 150, 250];
+function rbCollectNextUnlockSkillTargets() {
+  var targets = {};
   if (typeof gameData === "undefined" || !gameData.requirements) return targets;
 
-  Object.keys(gameData.requirements).forEach(function(entityName) {
-    var req = gameData.requirements[entityName];
-    if (!req || !req.requirements || req.isCompleted()) return;
-    if (!rbRequirementCanBeWorkedToward(req, skillName)) return;
+  function scanCategory(category) {
+    for (var i = 0; i < category.length; i++) {
+      var entityName = category[i];
+      var req = gameData.requirements[entityName];
+      if (!req || req.isCompleted() || !req.requirements) continue;
 
-    req.requirements.forEach(function(part) {
-      if (part.task === skillName && targets.indexOf(part.requirement) === -1) targets.push(part.requirement);
-    });
-  });
-
-  return targets.filter(function(value) { return Number.isFinite(value) && value > 0; }).sort(function(a, b) { return a - b; });
-}
-
-function rbNextTargetForSkill(skill) {
-  var targets = rbRequirementTargetsForSkill(skill.name);
-  for (var i = 0; i < targets.length; i++) {
-    if (targets[i] > skill.level) return targets[i];
+      req.requirements.forEach(function(part) {
+        if (!part.task) return;
+        var skill = gameData.taskData[part.task];
+        if (!(skill instanceof Skill)) return;
+        if (!rbTaskIsUnlocked(skill.name) || !rbTaskIsVisible(skill.name) || rbSkillIsSkipped(skill.name)) return;
+        if (!rbRequirementReachableNow(req, skill.name)) return;
+        if (skill.level >= part.requirement) return;
+        targets[skill.name] = Math.max(targets[skill.name] || 0, part.requirement);
+      });
+      return;
+    }
   }
-  return Math.ceil((skill.level + 1) / 25) * 25;
+
+  if (typeof jobCategories !== "undefined") {
+    Object.keys(jobCategories).forEach(function(categoryName) { scanCategory(jobCategories[categoryName]); });
+  }
+  if (typeof skillCategories !== "undefined") {
+    Object.keys(skillCategories).forEach(function(categoryName) { scanCategory(skillCategories[categoryName]); });
+  }
+  return targets;
 }
 
 function rbXpToTarget(skill, target) {
@@ -130,105 +126,84 @@ function rbXpToTarget(skill, target) {
   return need;
 }
 
-function rbUnlockScore(skill, target) {
-  if (typeof gameData === "undefined" || !gameData.requirements) return 1;
-  var score = 1;
-
-  Object.keys(gameData.requirements).forEach(function(entityName) {
-    var req = gameData.requirements[entityName];
-    if (!req || !req.requirements || req.isCompleted()) return;
-    if (!rbRequirementCanBeWorkedToward(req, skill.name)) return;
-
-    req.requirements.forEach(function(part) {
-      if (part.task !== skill.name) return;
-      var progress = target >= part.requirement ? 1 : target / Math.max(1, part.requirement);
-      var entity = gameData.taskData[entityName] || gameData.itemData[entityName];
-      var isJob = entity instanceof Job;
-      var isSkill = entity instanceof Skill;
-      score += progress * (isJob ? 2.6 : isSkill ? 2.0 : 1.2);
-    });
-  });
-
-  return score;
+function rbNextBalanceTarget(skill) {
+  var nextFive = Math.ceil((skill.level + 1) / 5) * 5;
+  var nextTen = Math.ceil((skill.level + 1) / 10) * 10;
+  return skill.level < 50 ? nextFive : nextTen;
 }
 
-function rbEffectScore(skill) {
-  var desc = (skill.baseData.description || "").toLowerCase();
-  var score = 1;
-
-  if (desc.includes("skill xp")) score += 1.4;
-  if (desc.includes("job xp")) score += 1.1;
-  if (desc.includes("all xp")) score += 1.6;
-  if (desc.includes("happiness")) score += 1.2;
-  if (desc.includes("expenses")) score += 0.9;
-  if (desc.includes("military")) score += 0.7;
-  if (desc.includes("strength")) score += 0.55;
-  if (desc.includes("magic") || desc.includes("t.a.a")) score += 1.15;
-  if (desc.includes("lifespan")) score += 1.1;
-  if (desc.includes("gamespeed")) score += 1.25;
-  if (desc.includes("evil gain")) score += 1.2;
-  if (desc.includes("job pay")) score += 0.75;
-
-  var mana = gameData.taskData && gameData.taskData["Mana control"];
-  if (!mana || mana.level <= 0) {
-    if (["Concentration", "Productivity", "Meditation"].indexOf(skill.name) !== -1) score += 0.9;
-    if (skill.name === "Bargaining" || skill.name === "Strength") score += 0.35;
-  }
-
-  return score;
-}
-
-function rbQuickWinScore(daysToTarget, level) {
-  var quick = 1 / Math.sqrt(Math.max(0.25, daysToTarget));
-  var early = level < 25 ? 0.65 : level < 50 ? 0.35 : 0.15;
-  return 1 + quick * 1.8 + early;
-}
-
-function rbAverageSkillLevel(skills) {
+function rbAverageLevel(skills) {
   if (!skills.length) return 0;
   return skills.reduce(function(sum, skill) { return sum + (skill.level || 0); }, 0) / skills.length;
 }
 
-function rbRankSmartSkills() {
-  var skills = rbAvailableSkills();
-  if (!skills.length) return [];
+function rbPickUnlockPlan(skills, unlockTargets) {
+  var plans = skills
+    .filter(function(skill) { return unlockTargets[skill.name] && skill.level < unlockTargets[skill.name]; })
+    .map(function(skill) {
+      var target = unlockTargets[skill.name];
+      var need = rbXpToTarget(skill, target);
+      var gain = Math.max(0.001, skill.getXpGain ? skill.getXpGain() : 1);
+      var days = need / gain;
+      var missingRatio = (target - skill.level) / Math.max(1, target);
+      var score = 10000 + missingRatio * 1000 - Math.sqrt(days);
+      return { skill: skill, target: target, days: days, score: score, mode: "unlock" };
+    })
+    .sort(function(a, b) { return b.score - a.score; });
 
-  var averageLevel = rbAverageSkillLevel(skills);
-  return skills.map(function(skill) {
-    var target = rbNextTargetForSkill(skill);
+  if (!plans.length) return null;
+
+  var current = gameData.currentSkill;
+  if (current) {
+    var currentPlan = plans.find(function(plan) { return plan.skill.name === current.name; });
+    if (currentPlan && currentPlan.score >= plans[0].score * 0.92) return currentPlan;
+  }
+  return plans[0];
+}
+
+function rbPickBalancePlan(skills) {
+  if (!skills.length) return null;
+  var avg = rbAverageLevel(skills);
+  var minLevel = Math.min.apply(null, skills.map(function(skill) { return skill.level || 0; }));
+
+  var plans = skills.map(function(skill) {
+    var target = rbNextBalanceTarget(skill);
     var need = rbXpToTarget(skill, target);
     var gain = Math.max(0.001, skill.getXpGain ? skill.getXpGain() : 1);
     var days = need / gain;
-    var catchUp = Math.sqrt((averageLevel + 12) / ((skill.level || 0) + 12));
-    var unlock = rbUnlockScore(skill, target);
-    var effect = rbEffectScore(skill) * Math.sqrt(Math.max(1, skill.getEffect ? skill.getEffect() : 1));
-    var quick = rbQuickWinScore(days, skill.level || 0);
-    var score = (unlock * 0.95 + effect * 1.35 + quick * 1.15) * catchUp / Math.pow(Math.max(0.35, days), 0.72);
-    return { skill: skill, target: target, days: days, score: score };
+    var behind = Math.max(0, avg - skill.level) + Math.max(0, minLevel + 3 - skill.level) * 1.5;
+    var quick = 1 / Math.sqrt(Math.max(0.25, days));
+    var score = behind * 100 + quick * 25 - skill.level * 0.05;
+    return { skill: skill, target: target, days: days, score: score, mode: "balance" };
   }).sort(function(a, b) { return b.score - a.score; });
+
+  var current = gameData.currentSkill;
+  if (current) {
+    var currentPlan = plans.find(function(plan) { return plan.skill.name === current.name; });
+    if (currentPlan && currentPlan.skill.level < currentPlan.target && currentPlan.score >= plans[0].score * 0.85) return currentPlan;
+  }
+  return plans[0];
 }
 
 function rbPickSmartSkillPlan() {
-  var ranked = rbRankSmartSkills();
-  if (!ranked.length) return null;
+  var skills = rbAvailableSkills();
+  if (!skills.length) return null;
 
-  var best = ranked[0];
-  var current = gameData.currentSkill;
-  if (current && rbTaskIsUnlocked(current.name) && rbSkillIsVisible(current.name) && !rbSkillIsSkipped(current.name)) {
-    var currentPlan = ranked.find(function(entry) { return entry.skill.name === current.name; });
-    if (currentPlan && current.level < currentPlan.target && currentPlan.score >= best.score * 0.88) return currentPlan;
-  }
-  return best;
+  var unlockTargets = rbCollectNextUnlockSkillTargets();
+  var unlockPlan = rbPickUnlockPlan(skills, unlockTargets);
+  if (unlockPlan) return unlockPlan;
+
+  return rbPickBalancePlan(skills);
 }
 
 function rbSetSkill(skillName) {
-  if (!skillName || !rbTaskIsUnlocked(skillName) || !rbSkillIsVisible(skillName)) return;
+  if (!skillName || !rbTaskIsUnlocked(skillName) || !rbTaskIsVisible(skillName)) return;
   gameData.currentSkill = gameData.taskData[skillName];
 }
 
 function rbSmartAutoLearnTick() {
   rbDetachOriginalAutoLearn();
-  rbKeepOriginalAutoLearnDisabled();
+  rbKeepOriginalAutoLearnOff();
   if (!rbAutoLearnEnabled()) return;
 
   var plan = rbPickSmartSkillPlan();
@@ -262,7 +237,8 @@ function rbUpdateSmartAutoLearnUi() {
     note.textContent = "Smart auto-learn: waiting for unlocked visible skills.";
     return;
   }
-  note.textContent = "Smart target: " + plan.skill.name + " → lvl " + plan.target + " (~" + rbFormatDays(plan.days) + ")";
+  var prefix = plan.mode === "unlock" ? "Unlock priority" : "Balance training";
+  note.textContent = prefix + ": " + plan.skill.name + " → lvl " + plan.target + " (~" + rbFormatDays(plan.days) + ")";
 }
 
 function installRealityBreakSmartAutoLearn() {
