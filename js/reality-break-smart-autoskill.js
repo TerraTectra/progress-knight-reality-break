@@ -1,6 +1,7 @@
 // Reality Break Smart Auto-learn.
-// Current rule: train all visible/unlocked skills evenly by real time-to-next-5-level checkpoint.
-// No unlock chasing. A selected skill is held only until it reaches the nearest x5 checkpoint, then rotation continues.
+// Current rule: train visible/unlocked skills by estimated real training-time progress.
+// It does not simply compare raw levels. It compares cumulative XP needed versus current XP/day.
+// A selected skill is kept until the nearest x5 checkpoint, then rotation continues.
 
 function rbTaskRow(taskName) {
   return document.getElementById("row " + taskName);
@@ -77,23 +78,40 @@ function rbIsAtFiveCheckpoint(skill) {
   return (skill.level || 0) > 0 && (skill.level || 0) % 5 === 0;
 }
 
-function rbXpToTarget(skill, target) {
-  var need = Math.max(0, skill.getMaxXp() - skill.xp);
-  function maxXpAt(level) {
-    return Math.round(skill.baseData.maxXp * (level + 1) * Math.pow(1.01, level));
-  }
-  for (var level = skill.level + 1; level < target; level++) need += maxXpAt(level);
-  return need;
+function rbMaxXpAt(skill, level) {
+  return Math.round(skill.baseData.maxXp * (level + 1) * Math.pow(1.01, level));
+}
+
+function rbCumulativeXpToCurrent(skill) {
+  var total = 0;
+  for (var level = 0; level < (skill.level || 0); level++) total += rbMaxXpAt(skill, level);
+  total += Math.max(0, skill.xp || 0);
+  return total;
+}
+
+function rbCumulativeXpToTarget(skill, target) {
+  var total = 0;
+  for (var level = 0; level < target; level++) total += rbMaxXpAt(skill, level);
+  return total;
 }
 
 function rbPlanForSkill(skill) {
   var target = rbNextMultipleOfFive(skill.level || 0);
-  var need = rbXpToTarget(skill, target);
   var gain = Math.max(0.001, skill.getXpGain ? skill.getXpGain() : 1);
-  var days = need / gain;
-  var block = Math.floor((skill.level || 0) / 5);
-  var progressInBlock = ((skill.level || 0) % 5) + Math.max(0, Math.min(0.999, skill.xp / Math.max(1, skill.getMaxXp())));
-  return { skill: skill, target: target, days: days, block: block, progressInBlock: progressInBlock, mode: "even" };
+  var currentEquivalentDays = rbCumulativeXpToCurrent(skill) / gain;
+  var targetEquivalentDays = rbCumulativeXpToTarget(skill, target) / gain;
+  var daysToTarget = Math.max(0.001, targetEquivalentDays - currentEquivalentDays);
+  var checkpoint = Math.floor((skill.level || 0) / 5);
+
+  return {
+    skill: skill,
+    target: target,
+    days: daysToTarget,
+    currentEquivalentDays: currentEquivalentDays,
+    targetEquivalentDays: targetEquivalentDays,
+    checkpoint: checkpoint,
+    mode: "time-even"
+  };
 }
 
 function rbPickEvenSkillPlan() {
@@ -104,21 +122,20 @@ function rbPickEvenSkillPlan() {
   var current = gameData.currentSkill;
   var currentPlan = current ? plans.find(function(plan) { return plan.skill.name === current.name; }) : null;
 
-  // Hold the current skill only while it is inside a 5-level block.
-  // As soon as it reaches lvl 5/10/15/etc, release it and rotate to the most behind block.
+  // Hold only until the next x5 checkpoint. At lvl 5/10/15/etc. immediately rotate.
   if (currentPlan && !rbIsAtFiveCheckpoint(current) && current.level < currentPlan.target) return currentPlan;
 
-  var minBlock = Math.min.apply(null, plans.map(function(plan) { return plan.block; }));
-  var lowestBlock = plans.filter(function(plan) { return plan.block === minBlock; });
-
-  // Among the most behind checkpoint block, train the fastest-to-finish skill first.
-  // This keeps all skills moving evenly by real training time, not just by raw level.
-  lowestBlock.sort(function(a, b) {
+  // Choose the skill with the lowest estimated real training-time already invested.
+  // This balances level + XP requirements + XP/day instead of blindly following raw levels.
+  plans.sort(function(a, b) {
+    if (Math.abs(a.currentEquivalentDays - b.currentEquivalentDays) > 0.01) {
+      return a.currentEquivalentDays - b.currentEquivalentDays;
+    }
     if (Math.abs(a.days - b.days) > 0.01) return a.days - b.days;
-    return a.progressInBlock - b.progressInBlock;
+    return (a.skill.level || 0) - (b.skill.level || 0);
   });
 
-  return lowestBlock[0] || plans[0];
+  return plans[0] || null;
 }
 
 function rbPickSmartSkillPlan() {
@@ -166,7 +183,7 @@ function rbUpdateSmartAutoLearnUi() {
     note.textContent = "Auto-learn: waiting for unlocked visible skills.";
     return;
   }
-  note.textContent = "Even training: " + plan.skill.name + " → lvl " + plan.target + " (~" + rbFormatDays(plan.days) + ")";
+  note.textContent = "Time-even training: " + plan.skill.name + " → lvl " + plan.target + " (~" + rbFormatDays(plan.days) + ", invested ~" + rbFormatDays(plan.currentEquivalentDays) + ")";
 }
 
 function installRealityBreakSmartAutoLearn() {
