@@ -87,6 +87,22 @@ function installRealityBreakSpeedTuning() {
   window.applySpeed = realityBreakApplySpeed;
 }
 
+function isRealityBreakEvilOpened() {
+  if (typeof gameData === "undefined") return false;
+  return (gameData.evil || 0) > 0 || (gameData.rebirthTwoCount || 0) > 0;
+}
+
+function updateRealityBreakEvilVisibility() {
+  var opened = isRealityBreakEvilOpened();
+  document.body.classList.toggle("rb-evil-opened", opened);
+
+  var evilInfo = document.getElementById("evilInfo");
+  if (evilInfo) evilInfo.style.display = opened ? "inline" : "none";
+
+  var evilDisplay = document.getElementById("evilDisplay");
+  if (evilDisplay && typeof gameData !== "undefined") evilDisplay.textContent = format(gameData.evil || 0);
+}
+
 function canBreakReality() {
   if (typeof gameData === "undefined") return false;
   var evil = gameData.evil || 0;
@@ -179,6 +195,7 @@ function updateRealityBreakMetaPanel() {
 
 function installRealityBreakMetaScaffold() {
   installRealityBreakSpeedTuning();
+  updateRealityBreakEvilVisibility();
   var settings = document.getElementById("settings");
   installRealityBreakAdminPanel(settings);
   installRealityBreakMetaPanel(settings);
@@ -186,6 +203,7 @@ function installRealityBreakMetaScaffold() {
   if (!window.__realityBreakMetaInterval) {
     window.__realityBreakMetaInterval = setInterval(function() {
       installRealityBreakSpeedTuning();
+      updateRealityBreakEvilVisibility();
       updateRealityBreakAdminPanel();
       updateRealityBreakMetaPanel();
     }, 250);
