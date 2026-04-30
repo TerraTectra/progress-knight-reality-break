@@ -9,7 +9,14 @@ function rbTaskRow(taskName) {
 function rbTaskIsVisible(taskName) {
   var row = rbTaskRow(taskName);
   if (!row) return false;
-  return !row.classList.contains("hiddenTask") && row.style.display !== "none";
+  var style = window.getComputedStyle ? window.getComputedStyle(row) : null;
+  return !row.classList.contains("hiddenTask") && row.style.display !== "none" && (!style || style.display !== "none" && style.visibility !== "hidden");
+}
+
+function rbTaskIsUnlocked(taskName) {
+  if (typeof gameData === "undefined" || !gameData.requirements) return true;
+  var req = gameData.requirements[taskName];
+  return !req || req.isCompleted();
 }
 
 function rbSkillIsVisible(skillName) {
@@ -42,6 +49,7 @@ function rbAvailableSkills() {
   if (typeof gameData === "undefined" || !gameData.taskData) return [];
   return Object.values(gameData.taskData)
     .filter(function(task) { return task instanceof Skill; })
+    .filter(function(skill) { return rbTaskIsUnlocked(skill.name); })
     .filter(function(skill) { return rbSkillIsVisible(skill.name); })
     .filter(function(skill) { return !rbSkillIsSkipped(skill.name); });
 }
@@ -54,9 +62,9 @@ function rbRequirementCanBeWorkedToward(req, focusedSkillName) {
     if (part.task === focusedSkillName) return true;
     if (rbTaskLevel(part.task) >= part.requirement) return true;
 
-    // Another missing requirement is acceptable only if that task is already visible and can be progressed now.
-    // This prevents the planner from chasing far-future hidden chains.
-    return rbTaskIsVisible(part.task);
+    // Another missing requirement is acceptable only if that task is already unlocked and visible.
+    // This prevents the planner from chasing far-future hidden chains like Time warping before Mage exists.
+    return rbTaskIsUnlocked(part.task) && rbTaskIsVisible(part.task);
   });
 }
 
@@ -178,7 +186,7 @@ function rbPickSmartSkillPlan() {
 
   var best = ranked[0];
   var current = gameData.currentSkill;
-  if (current) {
+  if (current && rbTaskIsUnlocked(current.name) && rbSkillIsVisible(current.name) && !rbSkillIsSkipped(current.name)) {
     var currentPlan = ranked.find(function(entry) { return entry.skill.name === current.name; });
     if (currentPlan && current.level < currentPlan.target && currentPlan.score >= best.score * 0.88) return currentPlan;
   }
@@ -186,7 +194,7 @@ function rbPickSmartSkillPlan() {
 }
 
 function rbSetSkillWithoutIntercept(skillName) {
-  if (!skillName) return;
+  if (!skillName || !rbTaskIsUnlocked(skillName) || !rbSkillIsVisible(skillName)) return;
   var originalSetTask = window.__rbOriginalSetTask || window.setTask || setTask;
   window.__rbSmartAutoLearnBypass = true;
   try { originalSetTask(skillName); }
@@ -205,6 +213,7 @@ function rbInstallSetTaskInterceptor() {
       var plan = rbPickSmartSkillPlan();
       if (plan && plan.skill && plan.skill.name) return originalSetTask(plan.skill.name);
     }
+    if (rbIsSkillName(taskName) && (!rbTaskIsUnlocked(taskName) || !rbSkillIsVisible(taskName))) return null;
     return originalSetTask(taskName);
   };
 
@@ -242,7 +251,7 @@ function rbUpdateSmartAutoLearnUi() {
   if (!note) return;
   var plan = rbPickSmartSkillPlan();
   if (!plan) {
-    note.textContent = "Smart auto-learn: waiting for visible skills.";
+    note.textContent = "Smart auto-learn: waiting for unlocked visible skills.";
     return;
   }
   note.textContent = "Smart target: " + plan.skill.name + " → lvl " + plan.target + " (~" + rbFormatDays(plan.days) + ")";
