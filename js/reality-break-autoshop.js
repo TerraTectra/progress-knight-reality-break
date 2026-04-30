@@ -1,7 +1,9 @@
-// Reality Break Auto Shop v3.
+// Reality Break Auto Shop v3.1.
 // Faster, progression-ordered, income-aware buyer for Progress Knight: Reality Break.
+// Unlock is permanent after Merchant level 100, except hard/global reset.
 
 const REALITY_BREAK_AUTOSHOP_KEY = "progress-knight-reality-break-autoshop-v1";
+const REALITY_BREAK_AUTOSHOP_UNLOCK_KEY = "progress-knight-reality-break-autoshop-unlocked-v1";
 const REALITY_BREAK_AUTOSHOP_RESERVE = 0.10;
 const REALITY_BREAK_AUTOSHOP_TICK_MS = 250;
 const REALITY_BREAK_AUTOSHOP_BURST_LIMIT = 12;
@@ -16,9 +18,41 @@ function rbWriteAutoShopEnabled(value) {
   catch (error) {}
 }
 
+function rbReadAutoShopUnlocked() {
+  try { return localStorage.getItem(REALITY_BREAK_AUTOSHOP_UNLOCK_KEY) === "1"; }
+  catch (error) { return false; }
+}
+
+function rbWriteAutoShopUnlocked(value) {
+  try { localStorage.setItem(REALITY_BREAK_AUTOSHOP_UNLOCK_KEY, value ? "1" : "0"); }
+  catch (error) {}
+}
+
+function rbClearAutoShopUnlockForGlobalReset() {
+  try {
+    localStorage.removeItem(REALITY_BREAK_AUTOSHOP_KEY);
+    localStorage.removeItem(REALITY_BREAK_AUTOSHOP_UNLOCK_KEY);
+  } catch (error) {}
+}
+
+function rbMerchantReachedAutoShopUnlock() {
+  return !!(typeof gameData !== "undefined" && gameData.taskData && gameData.taskData.Merchant && (gameData.taskData.Merchant.level || 0) >= 100);
+}
+
 function rbCanUseAutoShop() {
-  if (typeof gameData === "undefined" || !gameData.taskData || !gameData.taskData.Merchant) return false;
-  return (gameData.taskData.Merchant.level || 0) >= 100;
+  if (rbMerchantReachedAutoShopUnlock()) rbWriteAutoShopUnlocked(true);
+  return rbReadAutoShopUnlocked();
+}
+
+function rbPatchGlobalResetForAutoShop() {
+  if (window.__rbAutoShopResetPatched || typeof resetGameData !== "function") return;
+  var originalResetGameData = resetGameData;
+  resetGameData = function() {
+    rbClearAutoShopUnlockForGlobalReset();
+    return originalResetGameData.apply(this, arguments);
+  };
+  window.resetGameData = resetGameData;
+  window.__rbAutoShopResetPatched = true;
 }
 
 function rbRowVisible(name) {
@@ -105,7 +139,6 @@ function rbMiscCandidateList() {
 function rbBestSafeMiscCandidate() {
   var list = rbMiscCandidateList().filter(function(entry) { return rbSafeNet(entry.afterNet); });
   list.sort(function(a, b) {
-    // Preserve original shop progression mostly, but prefer very efficient items inside nearby tiers.
     var tierA = Math.floor(a.index / 2);
     var tierB = Math.floor(b.index / 2);
     if (tierA !== tierB) return tierA - tierB;
@@ -121,7 +154,7 @@ function rbNextBlockedMiscCandidate() {
 }
 
 function rbPlanAutoShopPurchase() {
-  if (!rbCanUseAutoShop()) return { action: null, reason: "Unlocks at Merchant level 100." };
+  if (!rbCanUseAutoShop()) return { action: null, reason: "Unlocks permanently at Merchant level 100." };
   if (typeof gameData === "undefined" || !gameData.currentJob) return { action: null, reason: "Waiting for game data." };
 
   var property = rbNextPropertyCandidate();
@@ -191,10 +224,14 @@ function rbUpdateAutoShopPanel() {
 }
 
 function installRealityBreakAutoShop() {
+  rbPatchGlobalResetForAutoShop();
+  rbCanUseAutoShop();
   rbInstallAutoShopPanel();
   rbUpdateAutoShopPanel();
   if (!window.__realityBreakAutoShopInterval) {
     window.__realityBreakAutoShopInterval = setInterval(function() {
+      rbPatchGlobalResetForAutoShop();
+      rbCanUseAutoShop();
       rbInstallAutoShopPanel();
       rbAutoShopTick();
       rbUpdateAutoShopPanel();
