@@ -1,0 +1,45 @@
+name: Patch deployed base speed
+
+on:
+  push:
+    branches:
+      - gh-pages
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch-speed:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout gh-pages
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Set baseGameSpeed to x5 baseline
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('js/main.js')
+          text = path.read_text(encoding='utf-8')
+          old = 'const baseGameSpeed = 4'
+          new = 'const baseGameSpeed = 20'
+          if old not in text and new not in text:
+              raise SystemExit('baseGameSpeed declaration not found')
+          if old in text:
+              text = text.replace(old, new, 1)
+              path.write_text(text, encoding='utf-8')
+          PY
+      - name: Commit patch if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet; then
+            echo "No speed patch changes needed."
+          else
+            git add js/main.js
+            git commit -m "fix: lock base game speed to x5"
+            git push origin HEAD:gh-pages
+          fi
