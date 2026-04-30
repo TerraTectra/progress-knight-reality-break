@@ -2,14 +2,22 @@
 // Replaces the original auto-learn priority with a planner that considers unlocks, quick levels and useful passive bonuses.
 // The original game still calls setTask() from its own automation loop, so this script intercepts skill picks too.
 
-function rbSkillIsVisible(skillName) {
-  var row = document.getElementById("row " + skillName);
+function rbTaskRow(taskName) {
+  return document.getElementById("row " + taskName);
+}
+
+function rbTaskIsVisible(taskName) {
+  var row = rbTaskRow(taskName);
   if (!row) return false;
   return !row.classList.contains("hiddenTask") && row.style.display !== "none";
 }
 
+function rbSkillIsVisible(skillName) {
+  return rbTaskIsVisible(skillName);
+}
+
 function rbSkillIsSkipped(skillName) {
-  var row = document.getElementById("row " + skillName);
+  var row = rbTaskRow(skillName);
   if (!row) return false;
   var checkbox = row.getElementsByClassName("checkbox")[0];
   return !!(checkbox && checkbox.checked);
@@ -18,6 +26,11 @@ function rbSkillIsSkipped(skillName) {
 function rbIsSkillName(taskName) {
   if (typeof gameData === "undefined" || !gameData.taskData || !gameData.taskData[taskName]) return false;
   return gameData.taskData[taskName] instanceof Skill;
+}
+
+function rbTaskLevel(taskName) {
+  var task = gameData && gameData.taskData && gameData.taskData[taskName];
+  return task ? task.level || 0 : 0;
 }
 
 function rbAutoLearnEnabled() {
@@ -33,6 +46,20 @@ function rbAvailableSkills() {
     .filter(function(skill) { return !rbSkillIsSkipped(skill.name); });
 }
 
+function rbRequirementCanBeWorkedToward(req, focusedSkillName) {
+  if (!req || !req.requirements) return false;
+
+  return req.requirements.every(function(part) {
+    if (!part.task) return true;
+    if (part.task === focusedSkillName) return true;
+    if (rbTaskLevel(part.task) >= part.requirement) return true;
+
+    // Another missing requirement is acceptable only if that task is already visible and can be progressed now.
+    // This prevents the planner from chasing far-future hidden chains.
+    return rbTaskIsVisible(part.task);
+  });
+}
+
 function rbRequirementTargetsForSkill(skillName) {
   var targets = [5, 10, 15, 25, 40, 50, 75, 100, 150, 250];
   if (typeof gameData === "undefined" || !gameData.requirements) return targets;
@@ -40,6 +67,8 @@ function rbRequirementTargetsForSkill(skillName) {
   Object.keys(gameData.requirements).forEach(function(entityName) {
     var req = gameData.requirements[entityName];
     if (!req || !req.requirements || req.isCompleted()) return;
+    if (!rbRequirementCanBeWorkedToward(req, skillName)) return;
+
     req.requirements.forEach(function(part) {
       if (part.task === skillName && targets.indexOf(part.requirement) === -1) targets.push(part.requirement);
     });
@@ -72,6 +101,8 @@ function rbUnlockScore(skill, target) {
   Object.keys(gameData.requirements).forEach(function(entityName) {
     var req = gameData.requirements[entityName];
     if (!req || !req.requirements || req.isCompleted()) return;
+    if (!rbRequirementCanBeWorkedToward(req, skill.name)) return;
+
     req.requirements.forEach(function(part) {
       if (part.task !== skill.name) return;
       var progress = target >= part.requirement ? 1 : target / Math.max(1, part.requirement);
