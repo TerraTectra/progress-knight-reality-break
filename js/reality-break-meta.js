@@ -22,6 +22,7 @@ var REALITY_BREAK_DEFAULT_META = {
     darkDividend: 0,
   },
   unlockedAt: null,
+  breaks: 0,
 };
 
 function cloneRealityBreakDefaultMeta() {
@@ -95,10 +96,8 @@ function isRealityBreakEvilOpened() {
 function updateRealityBreakEvilVisibility() {
   var opened = isRealityBreakEvilOpened();
   document.body.classList.toggle("rb-evil-opened", opened);
-
   var evilInfo = document.getElementById("evilInfo");
   if (evilInfo) evilInfo.style.display = opened ? "inline" : "none";
-
   var evilDisplay = document.getElementById("evilDisplay");
   if (evilDisplay && typeof gameData !== "undefined") evilDisplay.textContent = format(gameData.evil || 0);
 }
@@ -118,7 +117,72 @@ function getRealityBreakMetaverseGain() {
   var tasks = Object.values(gameData.taskData || {});
   var highestJobLevel = Math.max.apply(null, [0].concat(tasks.filter(function(task) { return task instanceof Job; }).map(function(task) { return task.level || 0; })));
   var highestSkillLevel = Math.max.apply(null, [0].concat(tasks.filter(function(task) { return task instanceof Skill; }).map(function(task) { return task.level || 0; })));
-  return Math.max(0, Math.floor(Math.sqrt(evil) + highestJobLevel / 20 + highestSkillLevel / 25));
+  var chairman = (gameData.taskData && gameData.taskData.Chairman && gameData.taskData.Chairman.level) || 0;
+  return Math.max(1, Math.floor(Math.sqrt(Math.max(0, evil)) + highestJobLevel / 20 + highestSkillLevel / 25 + chairman));
+}
+
+function resetRealityBreakRunState() {
+  if (typeof gameData === "undefined") return;
+
+  gameData.coins = 0;
+  gameData.days = 365 * 14;
+  gameData.evil = 0;
+  gameData.rebirthOneCount = 0;
+  gameData.rebirthTwoCount = 0;
+  gameData.paused = false;
+  gameData.timeWarpingEnabled = true;
+
+  Object.keys(gameData.taskData || {}).forEach(function(name) {
+    var task = gameData.taskData[name];
+    task.level = 0;
+    task.maxLevel = 0;
+    task.xp = 0;
+  });
+
+  Object.keys(gameData.requirements || {}).forEach(function(name) {
+    gameData.requirements[name].completed = false;
+  });
+
+  gameData.currentJob = gameData.taskData && gameData.taskData.Beggar;
+  gameData.currentSkill = gameData.taskData && gameData.taskData.Concentration;
+  gameData.currentProperty = gameData.itemData && gameData.itemData.Homeless;
+  gameData.currentMisc = [];
+
+  try {
+    localStorage.removeItem("progress-knight-reality-break-autoshop-v1");
+    localStorage.removeItem("progress-knight-reality-break-autoshop-unlocked-v1");
+  } catch (error) {}
+
+  updateRealityBreakEvilVisibility();
+}
+
+function performRealityBreak() {
+  if (!canBreakReality()) return;
+  var gain = getRealityBreakMetaverseGain();
+  var meta = loadRealityBreakMeta();
+  meta.realityBroken = true;
+  meta.currentUniverse = Math.max(meta.currentUniverse || 1, 1);
+  meta.highestUniverse = Math.max(meta.highestUniverse || 1, 1);
+  meta.metaversePoints = (meta.metaversePoints || 0) + gain;
+  meta.breaks = (meta.breaks || 0) + 1;
+  meta.unlockedAt = meta.unlockedAt || Date.now();
+  saveRealityBreakMeta(meta);
+  resetRealityBreakRunState();
+  updateRealityBreakMetaPanel();
+}
+
+function getRealityBreakRequirementText() {
+  if (typeof gameData === "undefined" || !gameData.taskData) return "Waiting for game data.";
+  var parts = [];
+  var evil = gameData.evil || 0;
+  var chairman = (gameData.taskData.Chairman && gameData.taskData.Chairman.level) || 0;
+  var timeWarping = (gameData.taskData["Time warping"] && gameData.taskData["Time warping"].level) || 0;
+  var superImmortality = (gameData.taskData["Super immortality"] && gameData.taskData["Super immortality"].level) || 0;
+  if (evil < 1200) parts.push("Evil " + format(evil) + "/1.2k");
+  if (chairman < 10) parts.push("Chairman lvl " + chairman + "/10");
+  if (timeWarping < 100) parts.push("Time warping lvl " + timeWarping + "/100");
+  if (superImmortality < 35) parts.push("Super immortality lvl " + superImmortality + "/35");
+  return parts.length ? parts.join(", ") : "Ready.";
 }
 
 function installRealityBreakAdminPanel(settings) {
@@ -148,7 +212,6 @@ function updateRealityBreakAdminPanel() {
   var active = getRealityBreakAdminSpeedMultiplier();
   var label = document.getElementById("rbAdminSpeedLabel");
   if (label) label.textContent = "x" + active;
-
   var buttons = Array.prototype.slice.call(document.getElementsByClassName("rb-admin-speed-button"));
   buttons.forEach(function(button) {
     var isActive = button.textContent === "x" + active;
@@ -161,36 +224,39 @@ function updateRealityBreakAdminPanel() {
 function installRealityBreakMetaPanel(settings) {
   var meta = loadRealityBreakMeta();
   if (!settings || document.getElementById("realityBreakMetaPanel")) return;
-
   var wrapper = document.createElement("li");
   wrapper.id = "realityBreakMetaPanel";
-  wrapper.innerHTML = `
-    <h2>Reality Break</h2>
-    <div style="color: gray; margin-bottom: 8px">
-      Early scaffold. This panel tracks the future multiverse layer without changing original Progress Knight yet.
-    </div>
-    <div>Base game speed: <b>x${getRealityBreakAdminSpeedMultiplier()}</b></div>
-    <div>Universe: <b id="rbUniverse">${meta.currentUniverse}</b></div>
-    <div>Highest universe: <b id="rbHighestUniverse">${meta.highestUniverse}</b></div>
-    <div>Metaverse points: <b id="rbMetaPoints">${meta.metaversePoints}</b></div>
-    <div id="rbBreakHint" style="color: gray; margin-top: 8px"></div>
-  `;
+  wrapper.innerHTML = '' +
+    '<h2>Reality Break</h2>' +
+    '<div style="color: gray; margin-bottom: 8px">First meta layer. Break reality after reaching the late Evil phase.</div>' +
+    '<div>Base game speed: <b id="rbMetaSpeed"></b></div>' +
+    '<div>Reality broken: <b id="rbRealityBroken"></b></div>' +
+    '<div>Metaverse points: <b id="rbMetaPoints"></b></div>' +
+    '<div>Estimated gain: <b id="rbEstimatedMetaGain"></b> MP</div>' +
+    '<div id="rbBreakHint" style="color: gray; margin-top: 8px"></div>' +
+    '<button id="rbBreakRealityButton" class="w3-button button" style="margin-top: 8px">Break reality</button>';
   settings.querySelector("ul")?.prepend(wrapper);
+  var button = document.getElementById("rbBreakRealityButton");
+  if (button) button.addEventListener("click", performRealityBreak);
+  updateRealityBreakMetaPanel();
 }
 
 function updateRealityBreakMetaPanel() {
+  var meta = loadRealityBreakMeta();
+  var speed = document.getElementById("rbMetaSpeed");
+  var broken = document.getElementById("rbRealityBroken");
+  var points = document.getElementById("rbMetaPoints");
+  var gain = document.getElementById("rbEstimatedMetaGain");
   var hint = document.getElementById("rbBreakHint");
-  if (!hint) return;
-  var gain = getRealityBreakMetaverseGain();
-  hint.textContent = canBreakReality()
-    ? `Reality Break is ready. Estimated collapse gain: ${gain} MP.`
-    : "Reality Break locked. Progress through Evil, Chairman, Time warping and Super immortality first.";
+  var button = document.getElementById("rbBreakRealityButton");
+  var ready = canBreakReality();
 
-  var metaPanel = document.getElementById("realityBreakMetaPanel");
-  if (metaPanel) {
-    var speedLine = metaPanel.querySelector("div:nth-of-type(2) b");
-    if (speedLine) speedLine.textContent = "x" + getRealityBreakAdminSpeedMultiplier();
-  }
+  if (speed) speed.textContent = "x" + getRealityBreakAdminSpeedMultiplier();
+  if (broken) broken.textContent = meta.realityBroken ? "yes" : "no";
+  if (points) points.textContent = format(meta.metaversePoints || 0);
+  if (gain) gain.textContent = format(getRealityBreakMetaverseGain());
+  if (hint) hint.textContent = ready ? "Reality Break is ready." : "Required: " + getRealityBreakRequirementText();
+  if (button) button.disabled = !ready;
 }
 
 function installRealityBreakMetaScaffold() {
