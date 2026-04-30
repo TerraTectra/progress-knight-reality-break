@@ -2,7 +2,10 @@
 // Deployed from gh-pages. Keep this file self-contained and safe for the original Progress Knight runtime.
 
 var REALITY_BREAK_SAVE_KEY = "progress-knight-reality-break-meta-v1";
-var REALITY_BREAK_BASE_GAME_SPEED = 20;
+var REALITY_BREAK_ADMIN_SPEED_KEY = "progress-knight-reality-break-admin-speed-v1";
+var REALITY_BREAK_ORIGINAL_BASE_SPEED = 4;
+var REALITY_BREAK_DEFAULT_SPEED_MULTIPLIER = 5;
+var REALITY_BREAK_ADMIN_SPEEDS = [5, 10, 50, 100];
 
 var REALITY_BREAK_DEFAULT_META = {
   version: 1,
@@ -39,6 +42,22 @@ function saveRealityBreakMeta(meta) {
   localStorage.setItem(REALITY_BREAK_SAVE_KEY, JSON.stringify({ ...cloneRealityBreakDefaultMeta(), ...meta }));
 }
 
+function getRealityBreakAdminSpeedMultiplier() {
+  try {
+    var stored = Number(localStorage.getItem(REALITY_BREAK_ADMIN_SPEED_KEY) || REALITY_BREAK_DEFAULT_SPEED_MULTIPLIER);
+    return REALITY_BREAK_ADMIN_SPEEDS.indexOf(stored) >= 0 ? stored : REALITY_BREAK_DEFAULT_SPEED_MULTIPLIER;
+  } catch (error) {
+    return REALITY_BREAK_DEFAULT_SPEED_MULTIPLIER;
+  }
+}
+
+function setRealityBreakAdminSpeedMultiplier(value) {
+  var speed = Number(value);
+  if (REALITY_BREAK_ADMIN_SPEEDS.indexOf(speed) < 0) speed = REALITY_BREAK_DEFAULT_SPEED_MULTIPLIER;
+  try { localStorage.setItem(REALITY_BREAK_ADMIN_SPEED_KEY, String(speed)); } catch (error) {}
+  updateRealityBreakAdminPanel();
+}
+
 function realityBreakTimeWarpSpeed() {
   if (typeof gameData === "undefined") return 1;
   var timeWarping = gameData.taskData && gameData.taskData["Time warping"];
@@ -51,7 +70,8 @@ function realityBreakAliveFlag() {
 
 function realityBreakGameSpeed() {
   if (typeof gameData === "undefined") return 0;
-  return REALITY_BREAK_BASE_GAME_SPEED * +!gameData.paused * realityBreakAliveFlag() * realityBreakTimeWarpSpeed();
+  var adminMultiplier = getRealityBreakAdminSpeedMultiplier();
+  return REALITY_BREAK_ORIGINAL_BASE_SPEED * adminMultiplier * +!gameData.paused * realityBreakAliveFlag() * realityBreakTimeWarpSpeed();
 }
 
 function realityBreakApplySpeed(value) {
@@ -85,9 +105,45 @@ function getRealityBreakMetaverseGain() {
   return Math.max(0, Math.floor(Math.sqrt(evil) + highestJobLevel / 20 + highestSkillLevel / 25));
 }
 
-function installRealityBreakMetaPanel() {
+function installRealityBreakAdminPanel(settings) {
+  if (!settings || document.getElementById("realityBreakAdminPanel")) return;
+  var wrapper = document.createElement("li");
+  wrapper.id = "realityBreakAdminPanel";
+  wrapper.innerHTML = '' +
+    '<h2>Admin Panel</h2>' +
+    '<div style="color: gray; margin-bottom: 8px">Temporary testing controls.</div>' +
+    '<div>Game speed: <b id="rbAdminSpeedLabel"></b></div>' +
+    '<div id="rbAdminSpeedButtons" style="margin-top: 8px"></div>';
+  settings.querySelector("ul")?.prepend(wrapper);
+
+  var buttons = document.getElementById("rbAdminSpeedButtons");
+  REALITY_BREAK_ADMIN_SPEEDS.forEach(function(speed) {
+    var button = document.createElement("button");
+    button.className = "w3-button button rb-admin-speed-button";
+    button.style.marginRight = "6px";
+    button.style.marginBottom = "6px";
+    button.textContent = "x" + speed;
+    button.addEventListener("click", function() { setRealityBreakAdminSpeedMultiplier(speed); });
+    buttons.appendChild(button);
+  });
+}
+
+function updateRealityBreakAdminPanel() {
+  var active = getRealityBreakAdminSpeedMultiplier();
+  var label = document.getElementById("rbAdminSpeedLabel");
+  if (label) label.textContent = "x" + active;
+
+  var buttons = Array.prototype.slice.call(document.getElementsByClassName("rb-admin-speed-button"));
+  buttons.forEach(function(button) {
+    var isActive = button.textContent === "x" + active;
+    button.style.borderColor = isActive ? "rgb(225, 165, 0)" : "#dedede";
+    button.style.color = isActive ? "rgb(225, 165, 0)" : "#ffffff";
+    button.style.fontWeight = isActive ? "bold" : "normal";
+  });
+}
+
+function installRealityBreakMetaPanel(settings) {
   var meta = loadRealityBreakMeta();
-  var settings = document.getElementById("settings");
   if (!settings || document.getElementById("realityBreakMetaPanel")) return;
 
   var wrapper = document.createElement("li");
@@ -97,7 +153,7 @@ function installRealityBreakMetaPanel() {
     <div style="color: gray; margin-bottom: 8px">
       Early scaffold. This panel tracks the future multiverse layer without changing original Progress Knight yet.
     </div>
-    <div>Base game speed: <b>x5</b></div>
+    <div>Base game speed: <b>x${getRealityBreakAdminSpeedMultiplier()}</b></div>
     <div>Universe: <b id="rbUniverse">${meta.currentUniverse}</b></div>
     <div>Highest universe: <b id="rbHighestUniverse">${meta.highestUniverse}</b></div>
     <div>Metaverse points: <b id="rbMetaPoints">${meta.metaversePoints}</b></div>
@@ -113,14 +169,24 @@ function updateRealityBreakMetaPanel() {
   hint.textContent = canBreakReality()
     ? `Reality Break is ready. Estimated collapse gain: ${gain} MP.`
     : "Reality Break locked. Progress through Evil, Chairman, Time warping and Super immortality first.";
+
+  var metaPanel = document.getElementById("realityBreakMetaPanel");
+  if (metaPanel) {
+    var speedLine = metaPanel.querySelector("div:nth-of-type(2) b");
+    if (speedLine) speedLine.textContent = "x" + getRealityBreakAdminSpeedMultiplier();
+  }
 }
 
 function installRealityBreakMetaScaffold() {
   installRealityBreakSpeedTuning();
-  installRealityBreakMetaPanel();
+  var settings = document.getElementById("settings");
+  installRealityBreakAdminPanel(settings);
+  installRealityBreakMetaPanel(settings);
+  updateRealityBreakAdminPanel();
   if (!window.__realityBreakMetaInterval) {
     window.__realityBreakMetaInterval = setInterval(function() {
       installRealityBreakSpeedTuning();
+      updateRealityBreakAdminPanel();
       updateRealityBreakMetaPanel();
     }, 250);
   }
