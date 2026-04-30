@@ -1,7 +1,6 @@
 // Reality Break Smart Auto-learn.
-// Priority rule:
-// 1) Train skills needed for the next visible unlocks.
-// 2) If no unlock skill is currently needed, train all visible skills evenly.
+// Current rule: train all visible/unlocked skills evenly by real time-to-next-5-level checkpoint.
+// No unlock chasing. Every selected skill is kept until the next level divisible by 5.
 
 function rbTaskRow(taskName) {
   return document.getElementById("row " + taskName);
@@ -25,11 +24,6 @@ function rbSkillIsSkipped(skillName) {
   if (!row) return false;
   var checkbox = row.getElementsByClassName("checkbox")[0];
   return !!(checkbox && checkbox.checked);
-}
-
-function rbSkillLevel(skillName) {
-  var skill = gameData && gameData.taskData && gameData.taskData[skillName];
-  return skill ? skill.level || 0 : 0;
 }
 
 function rbDetachOriginalAutoLearn() {
@@ -75,46 +69,8 @@ function rbAvailableSkills() {
     .filter(function(skill) { return !rbSkillIsSkipped(skill.name); });
 }
 
-function rbRequirementReachableNow(req, focusSkillName) {
-  if (!req || !req.requirements) return false;
-  return req.requirements.every(function(part) {
-    if (!part.task) return true;
-    if (part.task === focusSkillName) return true;
-    if (rbSkillLevel(part.task) >= part.requirement) return true;
-    return rbTaskIsUnlocked(part.task) && rbTaskIsVisible(part.task);
-  });
-}
-
-function rbCollectNextUnlockSkillTargets() {
-  var targets = {};
-  if (typeof gameData === "undefined" || !gameData.requirements) return targets;
-
-  function scanCategory(category) {
-    for (var i = 0; i < category.length; i++) {
-      var entityName = category[i];
-      var req = gameData.requirements[entityName];
-      if (!req || req.isCompleted() || !req.requirements) continue;
-
-      req.requirements.forEach(function(part) {
-        if (!part.task) return;
-        var skill = gameData.taskData[part.task];
-        if (!(skill instanceof Skill)) return;
-        if (!rbTaskIsUnlocked(skill.name) || !rbTaskIsVisible(skill.name) || rbSkillIsSkipped(skill.name)) return;
-        if (!rbRequirementReachableNow(req, skill.name)) return;
-        if (skill.level >= part.requirement) return;
-        targets[skill.name] = Math.max(targets[skill.name] || 0, part.requirement);
-      });
-      return;
-    }
-  }
-
-  if (typeof jobCategories !== "undefined") {
-    Object.keys(jobCategories).forEach(function(categoryName) { scanCategory(jobCategories[categoryName]); });
-  }
-  if (typeof skillCategories !== "undefined") {
-    Object.keys(skillCategories).forEach(function(categoryName) { scanCategory(skillCategories[categoryName]); });
-  }
-  return targets;
+function rbNextMultipleOfFive(level) {
+  return Math.floor((level || 0) / 5) * 5 + 5;
 }
 
 function rbXpToTarget(skill, target) {
@@ -126,74 +82,42 @@ function rbXpToTarget(skill, target) {
   return need;
 }
 
-function rbNextBalanceTarget(skill) {
-  var nextFive = Math.ceil((skill.level + 1) / 5) * 5;
-  var nextTen = Math.ceil((skill.level + 1) / 10) * 10;
-  return skill.level < 50 ? nextFive : nextTen;
+function rbPlanForSkill(skill) {
+  var target = rbNextMultipleOfFive(skill.level || 0);
+  var need = rbXpToTarget(skill, target);
+  var gain = Math.max(0.001, skill.getXpGain ? skill.getXpGain() : 1);
+  var days = need / gain;
+  var block = Math.floor((skill.level || 0) / 5);
+  var progressInBlock = ((skill.level || 0) % 5) + Math.max(0, Math.min(0.999, skill.xp / Math.max(1, skill.getMaxXp())));
+  return { skill: skill, target: target, days: days, block: block, progressInBlock: progressInBlock, mode: "even" };
 }
 
-function rbAverageLevel(skills) {
-  if (!skills.length) return 0;
-  return skills.reduce(function(sum, skill) { return sum + (skill.level || 0); }, 0) / skills.length;
-}
-
-function rbPickUnlockPlan(skills, unlockTargets) {
-  var plans = skills
-    .filter(function(skill) { return unlockTargets[skill.name] && skill.level < unlockTargets[skill.name]; })
-    .map(function(skill) {
-      var target = unlockTargets[skill.name];
-      var need = rbXpToTarget(skill, target);
-      var gain = Math.max(0.001, skill.getXpGain ? skill.getXpGain() : 1);
-      var days = need / gain;
-      var missingRatio = (target - skill.level) / Math.max(1, target);
-      var score = 10000 + missingRatio * 1000 - Math.sqrt(days);
-      return { skill: skill, target: target, days: days, score: score, mode: "unlock" };
-    })
-    .sort(function(a, b) { return b.score - a.score; });
-
-  if (!plans.length) return null;
-
-  var current = gameData.currentSkill;
-  if (current) {
-    var currentPlan = plans.find(function(plan) { return plan.skill.name === current.name; });
-    if (currentPlan && currentPlan.score >= plans[0].score * 0.92) return currentPlan;
-  }
-  return plans[0];
-}
-
-function rbPickBalancePlan(skills) {
-  if (!skills.length) return null;
-  var avg = rbAverageLevel(skills);
-  var minLevel = Math.min.apply(null, skills.map(function(skill) { return skill.level || 0; }));
-
-  var plans = skills.map(function(skill) {
-    var target = rbNextBalanceTarget(skill);
-    var need = rbXpToTarget(skill, target);
-    var gain = Math.max(0.001, skill.getXpGain ? skill.getXpGain() : 1);
-    var days = need / gain;
-    var behind = Math.max(0, avg - skill.level) + Math.max(0, minLevel + 3 - skill.level) * 1.5;
-    var quick = 1 / Math.sqrt(Math.max(0.25, days));
-    var score = behind * 100 + quick * 25 - skill.level * 0.05;
-    return { skill: skill, target: target, days: days, score: score, mode: "balance" };
-  }).sort(function(a, b) { return b.score - a.score; });
-
-  var current = gameData.currentSkill;
-  if (current) {
-    var currentPlan = plans.find(function(plan) { return plan.skill.name === current.name; });
-    if (currentPlan && currentPlan.skill.level < currentPlan.target && currentPlan.score >= plans[0].score * 0.85) return currentPlan;
-  }
-  return plans[0];
-}
-
-function rbPickSmartSkillPlan() {
+function rbPickEvenSkillPlan() {
   var skills = rbAvailableSkills();
   if (!skills.length) return null;
 
-  var unlockTargets = rbCollectNextUnlockSkillTargets();
-  var unlockPlan = rbPickUnlockPlan(skills, unlockTargets);
-  if (unlockPlan) return unlockPlan;
+  var plans = skills.map(rbPlanForSkill);
+  var current = gameData.currentSkill;
+  var currentPlan = current ? plans.find(function(plan) { return plan.skill.name === current.name; }) : null;
 
-  return rbPickBalancePlan(skills);
+  // Hard rule: once selected, finish the next x5 checkpoint before switching.
+  if (currentPlan && current.level < currentPlan.target) return currentPlan;
+
+  var minBlock = Math.min.apply(null, plans.map(function(plan) { return plan.block; }));
+  var lowestBlock = plans.filter(function(plan) { return plan.block === minBlock; });
+
+  // Among the most behind checkpoint block, train the fastest-to-finish skill first.
+  // This keeps all skills moving evenly by real training time, not just by raw level.
+  lowestBlock.sort(function(a, b) {
+    if (Math.abs(a.days - b.days) > 0.01) return a.days - b.days;
+    return a.progressInBlock - b.progressInBlock;
+  });
+
+  return lowestBlock[0] || plans[0];
+}
+
+function rbPickSmartSkillPlan() {
+  return rbPickEvenSkillPlan();
 }
 
 function rbSetSkill(skillName) {
@@ -234,11 +158,10 @@ function rbUpdateSmartAutoLearnUi() {
   if (!note) return;
   var plan = rbPickSmartSkillPlan();
   if (!plan) {
-    note.textContent = "Smart auto-learn: waiting for unlocked visible skills.";
+    note.textContent = "Auto-learn: waiting for unlocked visible skills.";
     return;
   }
-  var prefix = plan.mode === "unlock" ? "Unlock priority" : "Balance training";
-  note.textContent = prefix + ": " + plan.skill.name + " → lvl " + plan.target + " (~" + rbFormatDays(plan.days) + ")";
+  note.textContent = "Even training: " + plan.skill.name + " → lvl " + plan.target + " (~" + rbFormatDays(plan.days) + ")";
 }
 
 function installRealityBreakSmartAutoLearn() {
