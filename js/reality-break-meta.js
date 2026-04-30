@@ -1,5 +1,5 @@
 // Reality Break meta-layer.
-// Keeps the original Progress Knight loop intact while adding a small, stable meta column.
+// Keeps the original Progress Knight loop intact while adding the second meta layer as a normal tab.
 
 var REALITY_BREAK_SAVE_KEY = "progress-knight-reality-break-meta-v2";
 var REALITY_BREAK_ADMIN_SPEED_KEY = "progress-knight-reality-break-admin-speed-v1";
@@ -12,16 +12,16 @@ var REALITY_BREAK_UPGRADES = {
 };
 
 var REALITY_BREAK_UNIVERSES = [
-    {id: 1, name: "Prime World", cost: 0, xp: 1, income: 1, expense: 1, mp: 1, rule: "Original Progress Knight rules."},
-    {id: 2, name: "Strained Kingdom", cost: 10, xp: 0.95, income: 0.9, expense: 1.1, mp: 1.75, rule: "Guild paperwork slows progress and taxes bite harder."},
-    {id: 3, name: "Taxed Crown", cost: 35, xp: 0.9, income: 0.84, expense: 1.22, mp: 2.4, rule: "Comfort costs more; economy planning matters earlier."},
-    {id: 4, name: "Slow Hourglass", cost: 90, xp: 0.82, income: 0.88, expense: 1.28, mp: 3.2, rule: "Time feels heavier; skill routing becomes important."},
-    {id: 5, name: "War Ledger", cost: 180, xp: 0.78, income: 0.82, expense: 1.38, mp: 4.2, rule: "Military paths strain the realm, but collapse rewards grow."},
-    {id: 6, name: "Arcane Debt", cost: 360, xp: 0.72, income: 0.8, expense: 1.5, mp: 5.5, rule: "Magic is powerful but the world charges interest."},
-    {id: 7, name: "Cracked Lifeline", cost: 750, xp: 0.68, income: 0.78, expense: 1.65, mp: 7.2, rule: "Lifespan pressure rises; rebirth planning becomes central."},
-    {id: 8, name: "Inverted Guilds", cost: 1500, xp: 0.62, income: 0.72, expense: 1.85, mp: 9.5, rule: "Work and study pacing no longer line up cleanly."},
-    {id: 9, name: "Broken Chronicle", cost: 3200, xp: 0.56, income: 0.68, expense: 2.1, mp: 12.5, rule: "Most old assumptions are punished; meta upgrades are required."},
-    {id: 10, name: "Reality Soup", cost: 7000, xp: 0.5, income: 0.62, expense: 2.5, mp: 18, rule: "The final universe is unstable enough to reveal the Observer."},
+    {id: 1, name: "Prime World", cost: 0, xp: 1, income: 1, expense: 1, mp: 1, rule: "Original Progress Knight rules. Low passive MP, but every record here still matters."},
+    {id: 2, name: "Strained Kingdom", cost: 12, xp: 0.96, income: 0.92, expense: 1.08, mp: 1.6, rule: "Guild paperwork slows progress and taxes bite harder."},
+    {id: 3, name: "Taxed Crown", cost: 45, xp: 0.92, income: 0.86, expense: 1.18, mp: 2.25, rule: "Comfort costs more; economy planning matters earlier."},
+    {id: 4, name: "Slow Hourglass", cost: 120, xp: 0.86, income: 0.86, expense: 1.3, mp: 3.1, rule: "Time feels heavier; lifespan and Time warping carry more weight."},
+    {id: 5, name: "War Ledger", cost: 280, xp: 0.8, income: 0.82, expense: 1.45, mp: 4.25, rule: "Military paths strain the realm, but collapse rewards grow."},
+    {id: 6, name: "Arcane Debt", cost: 650, xp: 0.74, income: 0.78, expense: 1.62, mp: 5.9, rule: "Magic is powerful but the world charges interest."},
+    {id: 7, name: "Cracked Lifeline", cost: 1400, xp: 0.68, income: 0.74, expense: 1.82, mp: 8.2, rule: "Lifespan pressure rises; rebirth planning becomes central."},
+    {id: 8, name: "Inverted Guilds", cost: 3000, xp: 0.62, income: 0.69, expense: 2.05, mp: 11.4, rule: "Work and study pacing no longer line up cleanly."},
+    {id: 9, name: "Broken Chronicle", cost: 6200, xp: 0.56, income: 0.64, expense: 2.35, mp: 15.8, rule: "Most old assumptions are punished; meta upgrades are required."},
+    {id: 10, name: "Reality Soup", cost: 12500, xp: 0.5, income: 0.58, expense: 2.75, mp: 22, rule: "The final universe is unstable enough to reveal the Observer."},
 ];
 
 var REALITY_BREAK_DEFAULT_META = {
@@ -33,8 +33,10 @@ var REALITY_BREAK_DEFAULT_META = {
     unlockedUniverses: [1],
     metaversePoints: 0,
     observerUnlocked: false,
+    observerMode: false,
     observerPoints: 0,
     observerLastAt: null,
+    simulacrums: [],
     passiveMpLastAt: null,
     universeRecords: {},
     globalUpgrades: {
@@ -65,6 +67,7 @@ function rbLoadMeta() {
         if (!meta.unlockedUniverses || !meta.unlockedUniverses.length) meta.unlockedUniverses = [1];
         if (meta.currentUniverse > meta.highestUniverse) meta.highestUniverse = meta.currentUniverse;
         if (!meta.universeRecords) meta.universeRecords = {};
+        if (!meta.simulacrums) meta.simulacrums = [];
         return meta;
     } catch (error) {
         return rbCloneDefaultMeta();
@@ -159,13 +162,13 @@ function rbUpdateCurrentUniverseRecord(meta) {
 function rbUniversePassiveRate(meta, id) {
     var universe = rbUniverseRule(id);
     var record = rbUniverseRecord(meta, id);
-    var progressPower = Math.sqrt(Math.max(0, record.bestJobLevel || 0)) * 0.0025 +
-        Math.sqrt(Math.max(0, record.bestSkillLevel || 0)) * 0.0025 +
-        Math.log10(Math.max(1, (record.bestEvil || 0) + 1)) * 0.006 +
-        (record.collapses || 0) * 0.01;
-    var base = 0.002 * Math.pow(universe.id, 1.35);
+    var progressPower = Math.sqrt(Math.max(0, record.bestJobLevel || 0)) * 0.006 +
+        Math.sqrt(Math.max(0, record.bestSkillLevel || 0)) * 0.006 +
+        Math.log10(Math.max(1, (record.bestEvil || 0) + 1)) * 0.02 +
+        (record.collapses || 0) * 0.08;
+    var base = 0.0012 * Math.pow(universe.id, 1.55);
     var rate = base * universe.mp * (1 + progressPower);
-    return Math.max(0.0005, rate);
+    return Math.max(0.0003, rate);
 }
 
 function rbTotalPassiveMpRate(meta) {
@@ -189,6 +192,19 @@ function rbNextUniverseRule(meta) {
     var nextId = Math.min(10, (meta.highestUniverse || 1) + 1);
     if (nextId <= meta.highestUniverse) return null;
     return rbUniverseRule(nextId);
+}
+
+function rbPreviousUniverseCleared(meta, universeId) {
+    if (universeId <= 2) return meta.realityBroken;
+    var previousRecord = rbUniverseRecord(meta, universeId - 1);
+    return (previousRecord.collapses || 0) > 0;
+}
+
+function rbCanUnlockUniverse(meta, universe) {
+    return !!universe &&
+        meta.realityBroken &&
+        meta.metaversePoints >= universe.cost &&
+        rbPreviousUniverseCleared(meta, universe.id);
 }
 
 function rbInstallMetaEffectPatch() {
@@ -329,7 +345,7 @@ function rbBreakReality() {
     meta.metaversePoints += rbGetMetaverseGain();
     rbSaveMeta(meta);
     rbResetCurrentRun();
-    rbRenderRealityColumn();
+    rbRenderMultiverseTab();
 }
 
 function rbBuyUpgrade(id) {
@@ -339,18 +355,25 @@ function rbBuyUpgrade(id) {
     meta.metaversePoints -= cost;
     meta.globalUpgrades[id] = (meta.globalUpgrades[id] || 0) + 1;
     rbSaveMeta(meta);
-    rbRenderRealityColumn();
+    rbRenderMultiverseTab();
+}
+
+function rbUnlockUniverse(id) {
+    var meta = rbLoadMeta();
+    var universe = rbUniverseRule(id);
+    if (!rbCanUnlockUniverse(meta, universe)) return;
+    meta.metaversePoints -= universe.cost;
+    if (meta.unlockedUniverses.indexOf(universe.id) < 0) meta.unlockedUniverses.push(universe.id);
+    meta.highestUniverse = Math.max(meta.highestUniverse, universe.id);
+    rbSaveMeta(meta);
+    rbRenderMultiverseTab();
 }
 
 function rbUnlockNextUniverse() {
     var meta = rbLoadMeta();
     var next = rbNextUniverseRule(meta);
-    if (!next || !meta.realityBroken || meta.metaversePoints < next.cost) return;
-    meta.metaversePoints -= next.cost;
-    meta.unlockedUniverses.push(next.id);
-    meta.highestUniverse = Math.max(meta.highestUniverse, next.id);
-    rbSaveMeta(meta);
-    rbRenderRealityColumn();
+    if (!next) return;
+    rbUnlockUniverse(next.id);
 }
 
 function rbEnterUniverse(id) {
@@ -360,7 +383,7 @@ function rbEnterUniverse(id) {
     meta.currentUniverse = id;
     rbSaveMeta(meta);
     rbResetCurrentRun();
-    rbRenderRealityColumn();
+    rbRenderMultiverseTab();
 }
 
 function rbUnlockObserverSeed() {
@@ -368,9 +391,25 @@ function rbUnlockObserverSeed() {
     if (!meta.realityBroken || meta.observerUnlocked || meta.metaversePoints < 10000 || meta.highestUniverse < 10) return;
     meta.metaversePoints -= 10000;
     meta.observerUnlocked = true;
+    meta.observerMode = true;
     meta.observerLastAt = Date.now();
+    meta.simulacrums = meta.simulacrums && meta.simulacrums.length ? meta.simulacrums : [rbCreateFirstSimulacrum()];
     rbSaveMeta(meta);
-    rbRenderRealityColumn();
+    rbApplyObserverMode(meta);
+    rbRenderMultiverseTab();
+    rbRenderObserverTab();
+}
+
+function rbCreateFirstSimulacrum() {
+    return {
+        id: "first",
+        name: "First Simulacrum",
+        rank: "Trash",
+        universe: 1,
+        highestUniverse: 1,
+        observerPerSecond: 0,
+        note: "Free first subordinate. Full bot simulation comes after the Observer layer is implemented.",
+    };
 }
 
 function rbTickObserver() {
@@ -396,41 +435,54 @@ function rbTickPassiveMetaverse() {
     rbSaveMeta(meta);
 }
 
-function rbFindMainFrame() {
-    var panels = document.getElementsByClassName("panel");
-    for (var i = 0; i < panels.length; i++) {
-        var style = panels[i].getAttribute("style") || "";
-        if (style.indexOf("width: 900px") >= 0 && style.indexOf("height: 40px") >= 0) {
-            return panels[i].parentElement;
-        }
-    }
-    return document.querySelector(".w3-margin > div");
+function rbCanShowMultiverse(meta) {
+    if (!meta) meta = rbLoadMeta();
+    return meta.realityBroken || (typeof gameData !== "undefined" && ((gameData.evil || 0) > 0 || (gameData.rebirthTwoCount || 0) > 0));
 }
 
-function rbCreateRealityColumn() {
-    if (document.getElementById("realityBreakColumn")) return document.getElementById("realityBreakColumn");
-    var frame = rbFindMainFrame();
-    if (!frame) return null;
-    frame.style.width = "1500px";
-    var column = document.createElement("div");
-    column.id = "realityBreakColumn";
-    column.className = "panel w3-margin-left w3-padding";
-    column.style.width = "260px";
-    column.style.height = "auto";
-    column.style.float = "left";
-    frame.appendChild(column);
-    return column;
+function rbApplyObserverMode(meta) {
+    if (!meta) meta = rbLoadMeta();
+    var body = document.getElementById("body");
+    if (!body) return;
+    if (meta.observerMode) {
+        body.classList.add("rb-observer-mode");
+        var observerButton = document.getElementById("observerTabButton");
+        if (observerButton && typeof setTab === "function") setTab(observerButton, "observer");
+    } else {
+        body.classList.remove("rb-observer-mode");
+    }
+}
+
+function rbUpdateMetaTabVisibility(meta) {
+    var multiverseButton = document.getElementById("multiverseTabButton");
+    var observerButton = document.getElementById("observerTabButton");
+    if (!multiverseButton || !observerButton) return;
+
+    if (rbCanShowMultiverse(meta)) {
+        multiverseButton.classList.remove("hidden");
+    } else {
+        multiverseButton.classList.add("hidden");
+    }
+
+    if (meta && meta.observerUnlocked) {
+        observerButton.classList.remove("hidden");
+    } else {
+        observerButton.classList.add("hidden");
+    }
+
+    rbApplyObserverMode(meta);
 }
 
 function rbUpgradeHtml(id) {
     var upgrade = REALITY_BREAK_UPGRADES[id];
     var level = rbUpgradeLevel(id);
     var cost = rbUpgradeCost(id);
-    return '<div class="rb-upgrade">' +
-        '<b>' + upgrade.name + '</b> <span class="rb-muted">lvl ' + level + '</span>' +
-        '<div class="rb-muted">' + upgrade.description + '</div>' +
-        '<button class="w3-button button rb-buy-upgrade" data-rb-upgrade="' + id + '">Buy - ' + cost + ' MP</button>' +
-    '</div>';
+    return '<tr>' +
+        '<td><b>' + upgrade.name + '</b></td>' +
+        '<td class="rb-muted">' + upgrade.description + '</td>' +
+        '<td>Lvl ' + level + '</td>' +
+        '<td><button class="w3-button button rb-buy-upgrade" data-rb-upgrade="' + id + '"' + (rbLoadMeta().metaversePoints >= cost ? "" : " disabled") + '>Buy - ' + cost + ' MP</button></td>' +
+    '</tr>';
 }
 
 function rbUniverseHtml(meta) {
@@ -439,19 +491,23 @@ function rbUniverseHtml(meta) {
         var universe = REALITY_BREAK_UNIVERSES[i];
         var unlocked = meta.unlockedUniverses.indexOf(universe.id) >= 0;
         var current = meta.currentUniverse === universe.id;
-        html += '<div class="rb-universe' + (current ? ' current' : '') + (unlocked ? ' unlocked' : ' locked') + '">' +
-            '<b>U-' + universe.id + ' ' + universe.name + '</b>' +
-            '<div class="rb-muted">' + universe.rule + '</div>' +
-            '<div class="rb-muted">XP x' + universe.xp.toFixed(2) + ', income x' + universe.income.toFixed(2) + ', expenses x' + universe.expense.toFixed(2) + ', MP x' + universe.mp.toFixed(2) + '</div>' +
-            '<div class="rb-muted">Passive: +' + rbUniversePassiveRate(meta, universe.id).toFixed(3) + ' MP/s</div>';
+        var canUnlock = rbCanUnlockUniverse(meta, universe);
+        var record = rbUniverseRecord(meta, universe.id);
+        html += '<tr class="' + (current ? 'current ' : '') + (unlocked ? 'unlocked' : 'locked') + '">' +
+            '<td><b>U-' + universe.id + ' ' + universe.name + '</b><br><span class="rb-muted">Clears: ' + (record.collapses || 0) + '</span></td>' +
+            '<td>' + universe.rule + '<br><span class="rb-muted">XP x' + universe.xp.toFixed(2) + ', income x' + universe.income.toFixed(2) + ', expenses x' + universe.expense.toFixed(2) + ', MP x' + universe.mp.toFixed(2) + '</span></td>' +
+            '<td class="' + (unlocked ? 'rb-mp' : 'rb-muted') + '">' + (unlocked ? '+' + rbUniversePassiveRate(meta, universe.id).toFixed(3) + ' MP/s' : 'Locked') + '</td>';
         if (unlocked) {
-            html += '<button class="w3-button button rb-enter-universe" data-rb-universe="' + universe.id + '"' + (current ? ' disabled' : '') + '>' + (current ? 'Current' : 'Enter') + '</button>';
+            html += '<td>' + (current ? '<b>Current</b>' : 'Unlocked') + '</td>' +
+                '<td><button class="w3-button button rb-enter-universe" data-rb-universe="' + universe.id + '"' + (current ? ' disabled' : '') + '>' + (current ? 'Current' : 'Enter') + '</button></td>';
         } else if (universe.id === (meta.highestUniverse || 1) + 1) {
-            html += '<button id="rbUnlockNextUniverse" class="w3-button button" ' + (meta.metaversePoints >= universe.cost ? "" : "disabled") + '>Unlock - ' + universe.cost + ' MP</button>';
+            var requirementText = rbPreviousUniverseCleared(meta, universe.id) ? 'Need ' + universe.cost + ' MP' : 'Clear U-' + (universe.id - 1);
+            html += '<td>' + requirementText + '</td>' +
+                '<td><button class="w3-button button rb-unlock-universe" data-rb-universe="' + universe.id + '" ' + (canUnlock ? "" : "disabled") + '>Unlock</button></td>';
         } else {
-            html += '<div class="rb-muted">Locked</div>';
+            html += '<td>Locked</td><td><button class="w3-button button" disabled>Locked</button></td>';
         }
-        html += '</div>';
+        html += '</tr>';
     }
     return html;
 }
@@ -468,65 +524,82 @@ function rbRenderAdminSpeedPanel() {
     return html;
 }
 
-function rbRenderRealityColumn() {
-    var column = rbCreateRealityColumn();
-    if (!column) return;
+function rbEnsureAdminSpeedPanel() {
+    var settings = document.getElementById("settings");
+    if (!settings) return;
+    var panel = document.getElementById("rbAdminSpeedPanel");
+    if (!panel) {
+        panel = document.createElement("li");
+        panel.id = "rbAdminSpeedPanel";
+        settings.getElementsByTagName("ul")[0].appendChild(panel);
+    }
+    panel.innerHTML = '<h2>Admin panel</h2>' + rbRenderAdminSpeedPanel();
+    var speedButtons = panel.getElementsByClassName("rb-speed-button");
+    for (var i = 0; i < speedButtons.length; i++) {
+        speedButtons[i].onclick = function() {
+            rbSetAdminSpeedMultiplier(Number(this.getAttribute("data-rb-speed")));
+            rbEnsureAdminSpeedPanel();
+        };
+    }
+}
+
+function rbRenderMultiverseTab() {
+    var root = document.getElementById("rbMultiverseRoot");
+    if (!root) return;
     var meta = rbLoadMeta();
     var gain = rbGetMetaverseGain();
     rbUpdateCurrentUniverseRecord(meta);
+    rbSaveMeta(meta);
+    rbUpdateMetaTabVisibility(meta);
     var passiveRate = rbTotalPassiveMpRate(meta);
-    var html = '<h2 style="margin-top: 0">Reality Break</h2>' +
-        '<div class="rb-note">Meta progression</div>' +
-        '<div>Reality broken: <b>' + (meta.realityBroken ? "yes" : "no") + '</b></div>' +
-        '<div>Universe: <b>' + meta.currentUniverse + '</b></div>' +
-        '<div>Metaverse points: <b>' + meta.metaversePoints.toFixed(2) + '</b></div>' +
-        '<div>Passive MP: <b>+' + passiveRate.toFixed(3) + '/s</b></div>' +
-        '<div style="margin-top: 8px; color: gray">Requirements: ' + rbMissingRealityRequirementsText() + '</div>' +
-        '<div style="margin-top: 4px">Estimated gain: <b>' + gain + ' MP</b></div>' +
-        '<button id="rbBreakRealityButton" class="w3-button button" style="margin-top: 8px" ' + (rbCanBreakReality() ? "" : "disabled") + '>Break reality</button>';
+    var currentUniverse = rbUniverseRule(meta.currentUniverse || 1);
+    var html = '<div class="rb-section-title">Multiverse</div>' +
+        '<div class="rb-summary">' +
+            '<div><span class="rb-muted">Metaverse points</span><b class="rb-mp">' + meta.metaversePoints.toFixed(2) + '</b></div>' +
+            '<div><span class="rb-muted">Passive MP/sec</span><b class="rb-good">+' + passiveRate.toFixed(3) + '</b></div>' +
+            '<div><span class="rb-muted">Current universe</span><b>U-' + (meta.currentUniverse || 1) + '</b></div>' +
+            '<div><span class="rb-muted">Highest universe</span><b>U-' + (meta.highestUniverse || 1) + '</b></div>' +
+        '</div>' +
+        '<div class="rb-multiverse-actions">' +
+            '<div><b>Reality Break</b> <span class="rb-muted">Second meta layer. Break or collapse the current universe to earn MP.</span></div>' +
+            '<div class="rb-muted">Requirements: ' + rbMissingRealityRequirementsText() + '</div>' +
+            '<div>Estimated collapse gain: <b class="rb-mp">' + gain + ' MP</b> <span class="rb-muted">Current rule: ' + currentUniverse.rule + '</span></div>' +
+            '<button id="rbBreakRealityButton" class="w3-button button" ' + (rbCanBreakReality() ? "" : "disabled") + '>' + (meta.realityBroken ? "Collapse universe" : "Break reality") + '</button>' +
+        '</div>';
 
     if (meta.realityBroken) {
-        html += '<hr><div class="rb-title">Metaverse Upgrades</div>' +
-            rbUpgradeHtml("stableMemory") +
-            rbUpgradeHtml("universalLabor") +
-            rbUpgradeHtml("longEcho") +
-            rbUpgradeHtml("darkDividend") +
-            '<hr><div class="rb-title">Universes</div>' +
-            '<div class="rb-muted">Second meta layer: clear U-I through U-X. Each universe distorts the rules harder.</div>' +
-            rbUniverseHtml(meta);
-        html += '<hr><div class="rb-title">Observer Seed</div>';
-        if (meta.observerUnlocked) {
-            html += '<div>Observer points: <b>' + meta.observerPoints.toFixed(1) + '</b></div>' +
-                '<div class="rb-muted">The Observer is awake. Simulacrums come after U-X is tuned.</div>';
-        } else {
-            html += '<div class="rb-muted">Locked until Universe X. Cost: 10000 MP.</div>' +
-                '<button id="rbUnlockObserver" class="w3-button button" ' + (meta.highestUniverse >= 10 && meta.metaversePoints >= 10000 ? "" : "disabled") + '>Unlock Observer Seed - 10000 MP</button>';
-        }
+        html += '<table class="rb-multiverse-table">' +
+            '<thead><tr><th style="width: 185px;">Universe</th><th>Distortion</th><th style="width: 145px;">Passive income</th><th style="width: 135px;">State</th><th style="width: 105px;"></th></tr></thead>' +
+            '<tbody>' + rbUniverseHtml(meta) + '</tbody>' +
+        '</table>' +
+        '<div class="rb-grid-two">' +
+            '<div class="rb-mini-panel"><div class="rb-section-title blue">Metaverse upgrades</div><table class="rb-multiverse-table rb-upgrade-table"><tbody>' +
+                rbUpgradeHtml("stableMemory") +
+                rbUpgradeHtml("universalLabor") +
+                rbUpgradeHtml("longEcho") +
+                rbUpgradeHtml("darkDividend") +
+            '</tbody></table></div>' +
+            rbObserverGateHtml(meta) +
+        '</div>';
     }
 
-    html += '<hr>' + rbRenderAdminSpeedPanel();
-    column.innerHTML = html;
+    html += '<div class="rb-note-line">Universes are the second large meta layer. You can switch between every unlocked universe at any time; switching resets the current run but keeps meta progress.</div>';
+    root.innerHTML = html;
 
     var breakButton = document.getElementById("rbBreakRealityButton");
     if (breakButton) breakButton.onclick = rbBreakReality;
 
-    var buyButtons = column.getElementsByClassName("rb-buy-upgrade");
+    var buyButtons = root.getElementsByClassName("rb-buy-upgrade");
     for (var i = 0; i < buyButtons.length; i++) {
         buyButtons[i].onclick = function() { rbBuyUpgrade(this.getAttribute("data-rb-upgrade")); };
     }
 
-    var speedButtons = column.getElementsByClassName("rb-speed-button");
-    for (var j = 0; j < speedButtons.length; j++) {
-        speedButtons[j].onclick = function() {
-            rbSetAdminSpeedMultiplier(Number(this.getAttribute("data-rb-speed")));
-            rbRenderRealityColumn();
-        };
+    var unlockButtons = root.getElementsByClassName("rb-unlock-universe");
+    for (var j = 0; j < unlockButtons.length; j++) {
+        unlockButtons[j].onclick = function() { rbUnlockUniverse(Number(this.getAttribute("data-rb-universe"))); };
     }
 
-    var unlockNextUniverse = document.getElementById("rbUnlockNextUniverse");
-    if (unlockNextUniverse) unlockNextUniverse.onclick = rbUnlockNextUniverse;
-
-    var universeButtons = column.getElementsByClassName("rb-enter-universe");
+    var universeButtons = root.getElementsByClassName("rb-enter-universe");
     for (var k = 0; k < universeButtons.length; k++) {
         universeButtons[k].onclick = function() { rbEnterUniverse(Number(this.getAttribute("data-rb-universe"))); };
     }
@@ -535,16 +608,75 @@ function rbRenderRealityColumn() {
     if (observerButton) observerButton.onclick = rbUnlockObserverSeed;
 }
 
+function rbObserverGateHtml(meta) {
+    var canUnlock = meta.highestUniverse >= 10 && meta.metaversePoints >= 10000;
+    if (meta.observerUnlocked) {
+        return '<div class="rb-mini-panel"><div class="rb-section-title red">Observer</div>' +
+            '<div class="rb-multiverse-actions">Status: <b>Awake</b><br>' +
+            'Observer points: <b>' + meta.observerPoints.toFixed(1) + '</b><br>' +
+            '<span class="rb-muted">Placeholder active. Full subordinate simulation comes after Universe X is tuned.</span><br>' +
+            '<button id="rbEnterObserverMode" class="w3-button button">Enter Observer</button></div></div>';
+    }
+    return '<div class="rb-mini-panel"><div class="rb-section-title red">Observer</div>' +
+        '<div class="rb-multiverse-actions">Status: <b>Locked</b><br>' +
+        '<span class="rb-muted">Third global layer. Unlocks after Universe X and 10000 MP. Entering it hides the old game tabs and replaces the game with subordinate bot management.</span><br>' +
+        '<button id="rbUnlockObserver" class="w3-button button" ' + (canUnlock ? "" : "disabled") + '>Unlock Observer - 10000 MP</button></div></div>';
+}
+
+function rbRenderObserverTab() {
+    var root = document.getElementById("rbObserverRoot");
+    if (!root) return;
+    var meta = rbLoadMeta();
+    if (!meta.observerUnlocked) {
+        root.innerHTML = '<div class="rb-section-title red">Observer</div><div class="rb-multiverse-actions">Observer is locked until Universe X.</div>';
+        return;
+    }
+    var simulacrums = meta.simulacrums && meta.simulacrums.length ? meta.simulacrums : [rbCreateFirstSimulacrum()];
+    var html = '<div class="rb-section-title red">Observer</div>' +
+        '<div class="rb-summary">' +
+            '<div><span class="rb-muted">Observer points</span><b>' + meta.observerPoints.toFixed(1) + '</b></div>' +
+            '<div><span class="rb-muted">Subordinates</span><b>' + simulacrums.length + '</b></div>' +
+            '<div><span class="rb-muted">Goal</span><b>Reach U-X</b></div>' +
+            '<div><span class="rb-muted">Layer</span><b>Third</b></div>' +
+        '</div>' +
+        '<div class="rb-multiverse-actions"><b>Placeholder</b><br>' +
+        '<span class="rb-muted">In the full Observer layer, every subordinate starts from zero and plays Progress Knight automatically. Ranks from Trash to Legendary change bonuses, mistakes and route quality. Their progress generates Observer Points used for global subordinate buffs.</span></div>';
+    for (var i = 0; i < simulacrums.length; i++) {
+        var sim = simulacrums[i];
+        html += '<div class="rb-simulacrum-row"><b>' + sim.name + '</b> <span class="rb-muted">Rank: ' + sim.rank + '</span><br>' +
+            '<span class="rb-muted">Starts from U-I, goal U-X. ' + sim.note + '</span></div>';
+    }
+    root.innerHTML = html;
+
+    var enterButton = document.getElementById("rbEnterObserverMode");
+    if (enterButton) {
+        enterButton.onclick = function() {
+            var latest = rbLoadMeta();
+            latest.observerMode = true;
+            rbSaveMeta(latest);
+            rbApplyObserverMode(latest);
+            rbRenderObserverTab();
+        };
+    }
+}
+
+function rbRenderRealityColumn() {
+    rbRenderMultiverseTab();
+    rbRenderObserverTab();
+}
+
 function rbInstallRealityBreakMeta() {
     rbInstallAdminSpeedPatch();
     rbInstallMetaEffectPatch();
     rbRenderRealityColumn();
+    rbEnsureAdminSpeedPanel();
     setInterval(function() {
         rbInstallAdminSpeedPatch();
         rbInstallMetaEffectPatch();
         rbTickPassiveMetaverse();
         rbTickObserver();
         rbRenderRealityColumn();
+        rbEnsureAdminSpeedPanel();
     }, 1000);
 }
 

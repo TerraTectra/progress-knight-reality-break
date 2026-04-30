@@ -202,6 +202,156 @@ body.rb-evil-opened #evilInfo {
   cursor: not-allowed;
 }
 
+.rb-section-title {
+  padding: 7px 10px;
+  font-size: 18px;
+  color: #fff;
+  background: #8e44ad;
+  border-bottom: 1px solid #494949;
+}
+
+.rb-section-title.blue {
+  background: #2980b9;
+}
+
+.rb-section-title.gold {
+  background: #b8860b;
+}
+
+.rb-section-title.red {
+  background: #9f2f2f;
+}
+
+.rb-summary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border-bottom: 1px solid #494949;
+}
+
+.rb-summary > div {
+  padding: 10px;
+  border-right: 1px solid #494949;
+}
+
+.rb-summary > div:last-child {
+  border-right: 0;
+}
+
+.rb-summary b {
+  display: block;
+  margin-top: 3px;
+  font-size: 18px;
+}
+
+.rb-multiverse-table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+
+.rb-multiverse-table th,
+.rb-multiverse-table td {
+  padding: 7px 8px;
+  border-bottom: 1px solid #494949;
+  vertical-align: middle !important;
+}
+
+.rb-multiverse-table th {
+  text-align: left;
+}
+
+.rb-multiverse-table tr.current {
+  background: orange !important;
+  color: #000;
+}
+
+.rb-multiverse-table tr.current .rb-muted,
+.rb-multiverse-table tr.current .rb-mp,
+.rb-multiverse-table tr.current .rb-good {
+  color: #000 !important;
+}
+
+.rb-multiverse-table tr.locked {
+  color: #969696;
+}
+
+.rb-multiverse-actions {
+  padding: 10px;
+}
+
+.rb-grid-two {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding: 10px;
+}
+
+.rb-mini-panel {
+  background: #2c2c2c;
+  border: 1px solid #151515;
+  min-width: 0;
+}
+
+.rb-upgrade-table {
+  table-layout: auto;
+}
+
+.rb-upgrade-table td:nth-child(1) {
+  width: 28%;
+}
+
+.rb-upgrade-table td:nth-child(2) {
+  width: 34%;
+}
+
+.rb-upgrade-table td:nth-child(3) {
+  width: 70px;
+  white-space: nowrap;
+}
+
+.rb-upgrade-table td:nth-child(4) {
+  width: 110px;
+  white-space: nowrap;
+}
+
+.rb-note-line {
+  padding: 8px 10px;
+  border-top: 1px solid #494949;
+  color: #bdbdbd;
+  font-size: 12px;
+}
+
+.rb-muted {
+  color: #aaa;
+  font-size: 12px;
+}
+
+.rb-mp {
+  color: #9bd8ff;
+}
+
+.rb-good {
+  color: #4caf50;
+}
+
+.rb-bad {
+  color: #e5534b;
+}
+
+.rb-observer-mode .tabButton:not(#observerTabButton),
+.rb-observer-mode #multiverseTabButton {
+  display: none !important;
+}
+
+.rb-observer-mode #observerTabButton {
+  display: inline-block !important;
+}
+
+.rb-simulacrum-row {
+  padding: 8px 10px;
+  border-bottom: 1px solid #494949;
+}
+
 .rb-upgrade,
 .rb-universe {
   border: 1px solid #3f3f3f;

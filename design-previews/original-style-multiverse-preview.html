@@ -1,0 +1,390 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Original Style Multiverse Preview</title>
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: rgb(32, 32, 32);
+      color: white;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 15px;
+    }
+
+    .page {
+      width: 1220px;
+      margin: 16px;
+    }
+
+    h1 {
+      margin: 0 0 12px;
+      font-size: 32px;
+      font-weight: 400;
+    }
+
+    .panel {
+      background: rgb(46, 46, 46);
+      border: 1px solid rgb(20, 20, 20);
+    }
+
+    .sidebar {
+      float: left;
+      width: 300px;
+      min-height: 660px;
+      padding: 12px;
+    }
+
+    .main {
+      float: left;
+      width: 900px;
+      margin-left: 16px;
+    }
+
+    .tabs {
+      height: auto;
+      min-height: 40px;
+      margin-bottom: 16px;
+      overflow: hidden;
+      white-space: normal;
+    }
+
+    .tab {
+      display: inline-block;
+      width: 112px;
+      min-height: 40px;
+      padding: 10px 6px;
+      text-align: center;
+      color: white;
+      border-right: 1px solid rgb(73, 73, 73);
+      vertical-align: top;
+    }
+
+    .tab.active {
+      background: #607d8b;
+    }
+
+    .content {
+      min-height: 604px;
+      padding: 0 0 12px;
+    }
+
+    .block {
+      margin-bottom: 16px;
+    }
+
+    .block-title {
+      padding: 7px 10px;
+      font-size: 18px;
+      color: white;
+      border-bottom: 1px solid rgb(73, 73, 73);
+    }
+
+    .title-purple { background: #8e44ad; }
+    .title-blue { background: #2980b9; }
+    .title-green { background: #219653; }
+    .title-gold { background: #b8860b; }
+    .title-red { background: #9f2f2f; }
+
+    .block-body {
+      padding: 10px;
+    }
+
+    .line {
+      margin-bottom: 7px;
+    }
+
+    .muted {
+      color: rgb(170, 170, 170);
+      font-size: 12px;
+    }
+
+    .money { color: #e5c100; }
+    .good { color: #4caf50; }
+    .bad { color: #e5534b; }
+    .mp { color: #9bd8ff; }
+    .evil { color: #ff6b6b; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+
+    th,
+    td {
+      padding: 7px 8px;
+      border-bottom: 1px solid rgb(73, 73, 73);
+      vertical-align: middle;
+    }
+
+    th {
+      text-align: left;
+      font-weight: 700;
+    }
+
+    .current {
+      background: orange !important;
+      color: black;
+    }
+
+    .locked {
+      color: rgb(150, 150, 150);
+    }
+
+    .small {
+      font-size: 12px;
+    }
+
+    .button {
+      display: inline-block;
+      min-width: 78px;
+      padding: 6px 10px;
+      text-align: center;
+      border: 1px solid white;
+      background: rgb(31, 31, 31);
+      color: white;
+    }
+
+    .button.disabled {
+      opacity: 0.45;
+    }
+
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      border-bottom: 1px solid rgb(73, 73, 73);
+    }
+
+    .summary > div {
+      padding: 10px;
+      border-right: 1px solid rgb(73, 73, 73);
+    }
+
+    .summary > div:last-child {
+      border-right: 0;
+    }
+
+    .summary b {
+      display: block;
+      margin-top: 3px;
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .progress-bar {
+      position: relative;
+      width: 170px;
+      height: 22px;
+      background: rgb(12, 101, 173);
+      border: 1px solid rgb(20, 20, 20);
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: rgb(46, 148, 231);
+    }
+
+    .progress-text {
+      position: absolute;
+      inset: 0;
+      padding-top: 3px;
+      text-align: center;
+      color: white;
+      font-size: 12px;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .note {
+      padding: 8px 10px;
+      border-top: 1px solid rgb(73, 73, 73);
+      color: rgb(190, 190, 190);
+      font-size: 12px;
+    }
+
+    .clearfix::after {
+      content: "";
+      display: block;
+      clear: both;
+    }
+  </style>
+</head>
+<body>
+  <div class="page clearfix">
+    <h1>Progress Knight</h1>
+
+    <aside class="sidebar panel">
+      <div class="block">
+        <div class="block-title title-blue">Character</div>
+        <div class="block-body">
+          <div class="line">Age: <b>42</b> years <span class="muted">Day 133</span></div>
+          <div class="line">Lifespan: <b>211</b> years</div>
+          <div class="line">Universe: <b class="mp">U-II</b></div>
+          <div class="line">Evil: <b class="evil">1,420</b></div>
+        </div>
+      </div>
+
+      <div class="block">
+        <div class="block-title title-gold">Money</div>
+        <div class="block-body">
+          <div class="line">Balance: <b class="money">12.84 platinum</b></div>
+          <div class="line">Net/day: <b class="good">+0.91 platinum</b></div>
+          <div class="line muted">Income/day: 2.44 platinum</div>
+          <div class="line muted">Expense/day: 1.53 platinum</div>
+        </div>
+      </div>
+
+      <div class="block">
+        <div class="block-title title-green">Automation</div>
+        <div class="block-body">
+          <div class="line"><input type="checkbox" checked> Auto-promote</div>
+          <div class="line"><input type="checkbox" checked> Auto-learn</div>
+          <div class="line"><input type="checkbox" checked> Auto-shop</div>
+          <div class="muted">Next shop: Royal ledger</div>
+        </div>
+      </div>
+
+      <div class="block">
+        <div class="block-title title-purple">Current task</div>
+        <div class="block-body">
+          <div class="line">Job: <b>Chairman</b> lvl 14</div>
+          <div class="line">Skill: <b>Time warping</b> lvl 104</div>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width: 64%"></div>
+            <div class="progress-text">64%</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <nav class="tabs panel">
+        <span class="tab">Jobs</span>
+        <span class="tab">Skills</span>
+        <span class="tab">Shop</span>
+        <span class="tab">Amulet</span>
+        <span class="tab active">Multiverse</span>
+        <span class="tab">Settings</span>
+      </nav>
+
+      <section class="content panel">
+        <div class="block-title title-purple">Multiverse</div>
+
+        <div class="summary">
+          <div>
+            <span class="muted">Metaverse points</span>
+            <b class="mp">348.62</b>
+          </div>
+          <div>
+            <span class="muted">Passive MP/sec</span>
+            <b class="good">+0.186</b>
+          </div>
+          <div>
+            <span class="muted">Current universe</span>
+            <b>U-II</b>
+          </div>
+          <div>
+            <span class="muted">Highest universe</span>
+            <b>U-IV</b>
+          </div>
+        </div>
+
+        <div class="block-body">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 170px;">Universe</th>
+                <th>Distortion</th>
+                <th style="width: 145px;">Passive income</th>
+                <th style="width: 130px;">State</th>
+                <th style="width: 105px;"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><b>U-I Prime World</b><br><span class="muted">Original rules</span></td>
+                <td>Baseline Progress Knight. Stable, low MP yield.</td>
+                <td class="mp">+0.018 MP/s</td>
+                <td>Unlocked</td>
+                <td><span class="button">Enter</span></td>
+              </tr>
+              <tr class="current">
+                <td><b>U-II Strained Kingdom</b><br><span>Guild pressure</span></td>
+                <td>XP x0.95, income x0.90, expenses x1.10. Royal administration counters taxes.</td>
+                <td><b>+0.062 MP/s</b></td>
+                <td><b>Current</b></td>
+                <td><span class="button">Current</span></td>
+              </tr>
+              <tr>
+                <td><b>U-III Taxed Crown</b><br><span class="muted">Harder economy</span></td>
+                <td>Housing costs scale earlier. Merchant path becomes more valuable.</td>
+                <td class="mp">+0.104 MP/s</td>
+                <td>Unlocked</td>
+                <td><span class="button">Enter</span></td>
+              </tr>
+              <tr>
+                <td><b>U-IV Slow Hourglass</b><br><span class="muted">Time pressure</span></td>
+                <td>Life feels shorter. Time warping and lifespan upgrades matter more.</td>
+                <td class="mp">+0.164 MP/s</td>
+                <td>Unlocked</td>
+                <td><span class="button">Enter</span></td>
+              </tr>
+              <tr class="locked">
+                <td><b>U-V Inverted Guilds</b><br><span class="muted">Next unlock</span></td>
+                <td>Work and skill priorities begin to invert. Requires 650 MP and U-IV clear.</td>
+                <td>Locked</td>
+                <td>Requires clear</td>
+                <td><span class="button disabled">Locked</span></td>
+              </tr>
+              <tr class="locked">
+                <td><b>U-X Reality Soup</b><br><span class="muted">Observer gate</span></td>
+                <td>Rules become unstable. Completing U-X opens the Observer layer.</td>
+                <td>Locked</td>
+                <td>Observer locked</td>
+                <td><span class="button disabled">Locked</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="two-col block-body">
+          <div class="panel">
+            <div class="block-title title-blue">Metaverse upgrades</div>
+            <table>
+              <tbody>
+                <tr><td>Stable Memory</td><td class="muted">All XP +8% / lvl</td><td>Lvl 3</td><td><span class="button">Buy</span></td></tr>
+                <tr><td>Universal Labor</td><td class="muted">Income +10% / lvl</td><td>Lvl 2</td><td><span class="button">Buy</span></td></tr>
+                <tr><td>Long Echo</td><td class="muted">Lifespan +5% / lvl</td><td>Lvl 1</td><td><span class="button">Buy</span></td></tr>
+                <tr><td>Dark Dividend</td><td class="muted">Evil gain +15% / lvl</td><td>Lvl 2</td><td><span class="button">Buy</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="panel">
+            <div class="block-title title-red">Observer</div>
+            <div class="block-body">
+              <div class="line">Status: <b>Locked</b></div>
+              <div class="line muted">Unlock condition: reach and complete Universe X.</div>
+              <div class="line muted">Observer is not shown before the final universe route is relevant.</div>
+              <span class="button disabled">Unavailable</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="note">
+          Design note: this preview keeps the original Progress Knight layout. Multiverse is a normal tab, not a separate right-side window.
+        </div>
+      </section>
+    </main>
+  </div>
+</body>
+</html>
