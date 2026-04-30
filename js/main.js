@@ -60,14 +60,21 @@ const jobBaseData = {
 const skillBaseData = {
     "Concentration": {name: "Concentration", maxXp: 100, effect: 0.01, description: "Skill xp"},
     "Productivity": {name: "Productivity", maxXp: 100, effect: 0.01, description: "Job xp"},
+    "Patience": {name: "Patience", maxXp: 120, effect: 0.006, description: "Skill xp"},
     "Bargaining": {name: "Bargaining", maxXp: 100, effect: -0.01, description: "Expenses"},
+    "Frugality": {name: "Frugality", maxXp: 110, effect: -0.006, description: "Expenses"},
+    "Diligence": {name: "Diligence", maxXp: 140, effect: 0.006, description: "All xp"},
     "Meditation": {name: "Meditation", maxXp: 100, effect: 0.01, description: "Happiness"},
+    "Curiosity": {name: "Curiosity", maxXp: 160, effect: 0.008, description: "Magic xp"},
 
     "Strength": {name: "Strength", maxXp: 100, effect: 0.01, description: "Military pay"},
+    "Endurance": {name: "Endurance", maxXp: 120, effect: 0.006, description: "Longer lifespan"},
+    "Weapon handling": {name: "Weapon handling", maxXp: 150, effect: 0.008, description: "Military xp"},
     "Battle tactics": {name: "Battle tactics", maxXp: 100, effect: 0.01, description: "Military xp"},
     "Muscle memory": {name: "Muscle memory", maxXp: 100, effect: 0.01, description: "Strength xp"},
 
     "Mana control": {name: "Mana control", maxXp: 100, effect: 0.01, description: "T.A.A. xp"},
+    "Arcane theory": {name: "Arcane theory", maxXp: 180, effect: 0.008, description: "Magic xp"},
     "Immortality": {name: "Immortality", maxXp: 100, effect: 0.01, description: "Longer lifespan"},
     "Time warping": {name: "Time warping", maxXp: 100, effect: 0.01, description: "Gamespeed"},
     "Super immortality": {name: "Super immortality", maxXp: 100, effect: 0.01, description: "Longer lifespan"},
@@ -90,13 +97,25 @@ const itemBaseData = {
     "Large house": {name: "Large house", expense: 25000, effect: 12},
     "Small palace": {name: "Small palace", expense: 300000, effect: 25},
     "Grand palace": {name: "Grand palace", expense: 5000000, effect: 60},
+    "Manor": {name: "Manor", expense: 25000000, effect: 95},
+    "Guild hall": {name: "Guild hall", expense: 120000000, effect: 145},
+    "Noble estate": {name: "Noble estate", expense: 750000000, effect: 230},
+    "Royal keep": {name: "Royal keep", expense: 4000000000, effect: 360},
+    "Ancient citadel": {name: "Ancient citadel", expense: 25000000000, effect: 560},
+    "Sky crown palace": {name: "Sky crown palace", expense: 160000000000, effect: 850},
 
+    "Cheap meal": {name: "Cheap meal", expense: 6, effect: 1.08, description: "Happiness"},
     "Book": {name: "Book", expense: 10, effect: 1.5, description: "Skill xp"},
+    "Ledger": {name: "Ledger", expense: 25, effect: 0.96, description: "Expenses"},
     "Dumbbells": {name: "Dumbbells", expense: 50, effect: 1.5, description: "Strength xp"},
+    "Training dummy": {name: "Training dummy", expense: 120, effect: 1.35, description: "Strength xp"},
+    "Meditation mat": {name: "Meditation mat", expense: 140, effect: 1.3, description: "Meditation xp"},
     "Personal squire": {name: "Personal squire", expense: 200, effect: 2, description: "Job xp"},
     "Steel longsword": {name: "Steel longsword", expense: 1000, effect: 2, description: "Military xp"},
     "Butler": {name: "Butler", expense: 7500, effect: 1.5, description: "Happiness"},
     "Sapphire charm": {name: "Sapphire charm", expense: 50000, effect: 3, description: "Magic xp"},
+    "Arcane focus": {name: "Arcane focus", expense: 180000, effect: 1.8, description: "Magic xp"},
+    "Royal ledger": {name: "Royal ledger", expense: 450000, effect: 1.25, description: "Job pay"},
     "Study desk": {name: "Study desk", expense: 1000000, effect: 2, description: "Skill xp"},
     "Library": {name: "Library", expense: 10000000, effect: 1.5, description: "Skill xp"},
 }
@@ -108,15 +127,15 @@ const jobCategories = {
 }
 
 const skillCategories = {
-    "Fundamentals": ["Concentration", "Productivity", "Bargaining", "Meditation"],
-    "Combat": ["Strength", "Battle tactics", "Muscle memory"],
-    "Magic": ["Mana control", "Immortality", "Time warping", "Super immortality"],
+    "Fundamentals": ["Concentration", "Productivity", "Patience", "Bargaining", "Frugality", "Diligence", "Meditation", "Curiosity"],
+    "Combat": ["Strength", "Endurance", "Weapon handling", "Battle tactics", "Muscle memory"],
+    "Magic": ["Mana control", "Arcane theory", "Immortality", "Time warping", "Super immortality"],
     "Dark magic": ["Dark influence", "Evil control", "Intimidation", "Demon training", "Blood meditation", "Demon's wealth"]
 }
 
 const itemCategories = {
-    "Properties": ["Homeless", "Tent", "Wooden hut", "Cottage", "House", "Large house", "Small palace", "Grand palace"],
-    "Misc": ["Book", "Dumbbells", "Personal squire", "Steel longsword", "Butler", "Sapphire charm", "Study desk", "Library"]
+    "Properties": ["Homeless", "Tent", "Wooden hut", "Cottage", "House", "Large house", "Small palace", "Grand palace", "Manor", "Guild hall", "Noble estate", "Royal keep", "Ancient citadel", "Sky crown palace"],
+    "Misc": ["Cheap meal", "Book", "Ledger", "Dumbbells", "Training dummy", "Meditation mat", "Personal squire", "Steel longsword", "Butler", "Sapphire charm", "Arcane focus", "Royal ledger", "Study desk", "Library"]
 }
 
 const headerRowColors = {
@@ -157,14 +176,21 @@ const tooltips = {
 
     "Concentration": "Improve your learning speed through practising intense concentration activities.",
     "Productivity": "Learn to procrastinate less at work and receive more job experience per day.",
+    "Patience": "Train yourself to endure slow progress without losing focus, improving long study sessions.",
     "Bargaining": "Study the tricks of the trade and persuasive skills to lower any type of expense.",
+    "Frugality": "Track wasteful habits and stretch every coin further before wealth arrives.",
+    "Diligence": "Build a strict daily rhythm that makes both work and training more consistent.",
     "Meditation": "Fill your mind with peace and tranquility to tap into greater happiness from within.",
+    "Curiosity": "Ask dangerous questions about mana, preparing the mind for arcane study.",
 
     "Strength": "Condition your body and strength through harsh training. Stronger individuals are paid more in the military.",
+    "Endurance": "Temper your body through long marches and sleepless nights, slightly extending your useful years.",
+    "Weapon handling": "Practice grip, stance and blade control before complex battle tactics.",
     "Battle tactics": "Create and revise battle strategies, improving experience gained in the military.",
     "Muscle memory": "Strengthen your neurons through habit and repetition, improving strength gains throughout the body.",
 
     "Mana control": "Strengthen your mana channels throughout your body, aiding you in becoming a more powerful magical user.",
+    "Arcane theory": "Study the structure of spells before trying to bend life and time.",
     "Immortality": "Lengthen your lifespan through the means of magic. However, is this truly the immortality you have tried seeking for...?",
     "Time warping": "Bend space and time through forbidden techniques, resulting in a faster gamespeed.",
     "Super immortality": "Through harnessing ancient, forbidden techniques, lengthen your lifespan drastically beyond comprehension.",
@@ -184,13 +210,25 @@ const tooltips = {
     "Large house": "Much larger than a regular house, which boasts even more rooms and multiple floors. The building is quite spacious but comes with a hefty price tag.",
     "Small palace": "A very rich and meticulously built structure rimmed with fine metals such as silver. Extremely high expenses to maintain for a lavish lifestyle.",
     "Grand palace": "A grand residence completely composed of gold and silver. Provides the utmost luxurious and comfortable living conditions possible for a ludicrous price.",
+    "Manor": "A landed manor with servants, gardens and quiet rooms fit for long studies.",
+    "Guild hall": "A prestigious hall where trade contacts and craftsmen gather under your banner.",
+    "Noble estate": "A sprawling estate that turns noble comfort into a real training advantage.",
+    "Royal keep": "A fortified royal residence with archives, guards and private chambers.",
+    "Ancient citadel": "An old fortress layered with history, discipline and forbidden rooms.",
+    "Sky crown palace": "A mythic palace above the clouds, built for a ruler who no longer belongs to ordinary life.",
 
+    "Cheap meal": "Simple food that keeps you steady through the first years of training.",
     "Book": "A place to write down all your thoughts and discoveries, allowing you to learn a lot more quickly.",
+    "Ledger": "A small accounting ledger that helps catch waste before it drains your purse.",
     "Dumbbells": "Heavy tools used in strenuous exercise to toughen up and accumulate strength even faster than before. ",
+    "Training dummy": "A battered target for repeated strikes and basic combat conditioning.",
+    "Meditation mat": "A quiet mat that makes daily meditation easier to keep consistent.",
     "Personal squire": "Assists you in completing day to day activities, giving you more time to be productive at work.",
     "Steel longsword": "A fine blade used to slay enemies even quicker in combat and therefore gain more experience.",
     "Butler": "Keeps your household clean at all times and also prepares three delicious meals per day, leaving you in a happier, stress-free mood.",
     "Sapphire charm": "Embedded with a rare sapphire, this charm activates more mana channels within your body, providing a much easier time learning magic.",
+    "Arcane focus": "A tuned focus used to stabilize advanced mana exercises.",
+    "Royal ledger": "An elite trade ledger that turns higher administration into better pay.",
     "Study desk": "A dedicated area which provides many fine stationary and equipment designed for furthering your progress in research.",
     "Library": "Stores a collection of books, each containing vast amounts of information from basic life skills to complex magic spells.",
 }
@@ -224,6 +262,7 @@ function addMultipliers() {
         task.xpMultipliers.push(getHappiness)
         task.xpMultipliers.push(getBindedTaskEffect("Dark influence"))
         task.xpMultipliers.push(getBindedTaskEffect("Demon training"))
+        task.xpMultipliers.push(getBindedTaskEffect("Diligence"))
 
         if (task instanceof Job) {
             task.incomeMultipliers.push(task.getLevelMultiplier.bind(task))
@@ -232,6 +271,7 @@ function addMultipliers() {
             task.xpMultipliers.push(getBindedItemEffect("Personal squire"))    
         } else if (task instanceof Skill) {
             task.xpMultipliers.push(getBindedTaskEffect("Concentration"))
+            task.xpMultipliers.push(getBindedTaskEffect("Patience"))
             task.xpMultipliers.push(getBindedItemEffect("Book"))
             task.xpMultipliers.push(getBindedItemEffect("Study desk"))
             task.xpMultipliers.push(getBindedItemEffect("Library"))
@@ -239,15 +279,26 @@ function addMultipliers() {
 
         if (jobCategories["Military"].includes(task.name)) {
             task.incomeMultipliers.push(getBindedTaskEffect("Strength"))
+            task.incomeMultipliers.push(getBindedItemEffect("Royal ledger"))
             task.xpMultipliers.push(getBindedTaskEffect("Battle tactics"))
+            task.xpMultipliers.push(getBindedTaskEffect("Weapon handling"))
             task.xpMultipliers.push(getBindedItemEffect("Steel longsword"))
         } else if (task.name == "Strength") {
             task.xpMultipliers.push(getBindedTaskEffect("Muscle memory"))
             task.xpMultipliers.push(getBindedItemEffect("Dumbbells"))
+            task.xpMultipliers.push(getBindedItemEffect("Training dummy"))
+        } else if (task.name == "Meditation") {
+            task.xpMultipliers.push(getBindedItemEffect("Meditation mat"))
         } else if (skillCategories["Magic"].includes(task.name)) {
+            task.xpMultipliers.push(getBindedTaskEffect("Curiosity"))
+            task.xpMultipliers.push(getBindedTaskEffect("Arcane theory"))
             task.xpMultipliers.push(getBindedItemEffect("Sapphire charm"))
+            task.xpMultipliers.push(getBindedItemEffect("Arcane focus"))
         } else if (jobCategories["The Arcane Association"].includes(task.name)) {
             task.xpMultipliers.push(getBindedTaskEffect("Mana control"))
+            task.xpMultipliers.push(getBindedTaskEffect("Curiosity"))
+            task.xpMultipliers.push(getBindedTaskEffect("Arcane theory"))
+            task.xpMultipliers.push(getBindedItemEffect("Arcane focus"))
         } else if (skillCategories["Dark magic"].includes(task.name)) {
             task.xpMultipliers.push(getEvil)
         }
@@ -257,7 +308,9 @@ function addMultipliers() {
         var item = gameData.itemData[itemName]
         item.expenseMultipliers = []
         item.expenseMultipliers.push(getBindedTaskEffect("Bargaining"))
+        item.expenseMultipliers.push(getBindedTaskEffect("Frugality"))
         item.expenseMultipliers.push(getBindedTaskEffect("Intimidation"))
+        item.expenseMultipliers.push(getBindedItemEffect("Ledger"))
     }
 }
 
@@ -284,7 +337,13 @@ function setCustomEffects() {
 
     var immortality = gameData.taskData["Immortality"]
     immortality.getEffect = function() {
-        var multiplier = 1 + getBaseLog(33, immortality.level + 1) 
+        var multiplier = 1 + getBaseLog(33, immortality.level + 1)
+        return multiplier
+    }
+
+    var endurance = gameData.taskData["Endurance"]
+    endurance.getEffect = function() {
+        var multiplier = 1 + getBaseLog(40, endurance.level + 1) / 2
         return multiplier
     }
 }
@@ -318,7 +377,7 @@ function applySpeed(value) {
 function getEvilGain() {
     var evilControl = gameData.taskData["Evil control"]
     var bloodMeditation = gameData.taskData["Blood meditation"]
-    var evil = evilControl.getEffect() * bloodMeditation.getEffect()
+    var evil = Math.max(1, Math.floor(evilControl.getEffect() * bloodMeditation.getEffect()))
     return evil
 }
 
@@ -608,6 +667,7 @@ function updateHeaderRows(categories) {
 
 function updateText() {
     //Sidebar
+    updateResourceVisibility()
     document.getElementById("ageDisplay").textContent = daysToYears(gameData.days)
     document.getElementById("dayDisplay").textContent = getDay()
     document.getElementById("lifespanDisplay").textContent = daysToYears(getLifespan())
@@ -723,6 +783,17 @@ function checkSkillSkipped(skill) {
     if (!row) return false
     var isSkillSkipped = row.getElementsByClassName("checkbox")[0].checked
     return isSkillSkipped
+}
+
+function updateResourceVisibility() {
+    var body = document.getElementById("body")
+    if (!body) return
+    var evilOpened = (gameData.evil || 0) > 0 || (gameData.rebirthTwoCount || 0) > 0
+    if (evilOpened) {
+        body.classList.add("rb-evil-opened")
+    } else {
+        body.classList.remove("rb-evil-opened")
+    }
 }
 
 function setSkillWithLowestMaxXp() {
@@ -912,7 +983,8 @@ function rebirthReset() {
 function getLifespan() {
     var immortality = gameData.taskData["Immortality"]
     var superImmortality = gameData.taskData["Super immortality"]
-    var lifespan = baseLifespan * immortality.getEffect() * superImmortality.getEffect()
+    var endurance = gameData.taskData["Endurance"]
+    var lifespan = baseLifespan * endurance.getEffect() * immortality.getEffect() * superImmortality.getEffect()
     return lifespan
 }
 
@@ -1084,7 +1156,7 @@ gameData.currentMisc = []
 
 gameData.requirements = {
     //Other
-    "The Arcane Association": new TaskRequirement(getElementsByClass("The Arcane Association"), [{task: "Concentration", requirement: 90}, {task: "Meditation", requirement: 70}]),
+    "The Arcane Association": new TaskRequirement(getElementsByClass("The Arcane Association"), [{task: "Mana control", requirement: 1}]),
     "Dark magic": new EvilRequirement(getElementsByClass("Dark magic"), [{requirement: 1}]),
     "Shop": new CoinRequirement([document.getElementById("shopTabButton")], [{requirement: gameData.itemData["Tent"].getExpense() * 50}]),
     "Rebirth tab": new AgeRequirement([document.getElementById("rebirthTabButton")], [{requirement: 25}]),
@@ -1125,17 +1197,24 @@ gameData.requirements = {
     //Fundamentals
     "Concentration": new TaskRequirement([getTaskElement("Concentration")], []),
     "Productivity": new TaskRequirement([getTaskElement("Productivity")], [{task: "Concentration", requirement: 5}]),
+    "Patience": new TaskRequirement([getTaskElement("Patience")], [{task: "Concentration", requirement: 10}]),
     "Bargaining": new TaskRequirement([getTaskElement("Bargaining")], [{task: "Concentration", requirement: 20}]),
-    "Meditation": new TaskRequirement([getTaskElement("Meditation")], [{task: "Concentration", requirement: 30}, {task: "Productivity", requirement: 20}]),
+    "Frugality": new TaskRequirement([getTaskElement("Frugality")], [{task: "Bargaining", requirement: 10}]),
+    "Diligence": new TaskRequirement([getTaskElement("Diligence")], [{task: "Productivity", requirement: 15}, {task: "Patience", requirement: 10}]),
+    "Meditation": new TaskRequirement([getTaskElement("Meditation")], [{task: "Concentration", requirement: 25}, {task: "Productivity", requirement: 15}]),
+    "Curiosity": new TaskRequirement([getTaskElement("Curiosity")], [{task: "Concentration", requirement: 35}, {task: "Patience", requirement: 15}]),
 
     //Combat
     "Strength": new TaskRequirement([getTaskElement("Strength")], []),
-    "Battle tactics": new TaskRequirement([getTaskElement("Battle tactics")], [{task: "Concentration", requirement: 20}]),
-    "Muscle memory": new TaskRequirement([getTaskElement("Muscle memory")], [{task: "Concentration", requirement: 30}, {task: "Strength", requirement: 30}]),
+    "Endurance": new TaskRequirement([getTaskElement("Endurance")], [{task: "Strength", requirement: 10}]),
+    "Weapon handling": new TaskRequirement([getTaskElement("Weapon handling")], [{task: "Strength", requirement: 15}]),
+    "Battle tactics": new TaskRequirement([getTaskElement("Battle tactics")], [{task: "Concentration", requirement: 20}, {task: "Weapon handling", requirement: 10}]),
+    "Muscle memory": new TaskRequirement([getTaskElement("Muscle memory")], [{task: "Concentration", requirement: 30}, {task: "Strength", requirement: 30}, {task: "Endurance", requirement: 20}]),
 
     //Magic
-    "Mana control": new TaskRequirement([getTaskElement("Mana control")], [{task: "Concentration", requirement: 90}, {task: "Meditation", requirement: 70}]),
-    "Immortality": new TaskRequirement([getTaskElement("Immortality")], [{task: "Apprentice mage", requirement: 10}]),
+    "Mana control": new TaskRequirement([getTaskElement("Mana control")], [{task: "Concentration", requirement: 90}, {task: "Meditation", requirement: 70}, {task: "Curiosity", requirement: 25}]),
+    "Arcane theory": new TaskRequirement([getTaskElement("Arcane theory")], [{task: "Mana control", requirement: 20}]),
+    "Immortality": new TaskRequirement([getTaskElement("Immortality")], [{task: "Apprentice mage", requirement: 10}, {task: "Arcane theory", requirement: 25}]),
     "Time warping": new TaskRequirement([getTaskElement("Time warping")], [{task: "Mage", requirement: 10}]),
     "Super immortality": new TaskRequirement([getTaskElement("Super immortality")], [{task: "Immortality", requirement: 120}, {task: "Time warping", requirement: 75}, {task: "Chairman", requirement: 25}]),
 
@@ -1156,14 +1235,26 @@ gameData.requirements = {
     "Large house": new CoinRequirement([getItemElement("Large house")], [{requirement: gameData.itemData["Large house"].getExpense() * 100}]),
     "Small palace": new CoinRequirement([getItemElement("Small palace")], [{requirement: gameData.itemData["Small palace"].getExpense() * 100}]),
     "Grand palace": new CoinRequirement([getItemElement("Grand palace")], [{requirement: gameData.itemData["Grand palace"].getExpense() * 100}]),
+    "Manor": new CoinRequirement([getItemElement("Manor")], [{requirement: gameData.itemData["Manor"].getExpense() * 80}]),
+    "Guild hall": new CoinRequirement([getItemElement("Guild hall")], [{requirement: gameData.itemData["Guild hall"].getExpense() * 80}]),
+    "Noble estate": new CoinRequirement([getItemElement("Noble estate")], [{requirement: gameData.itemData["Noble estate"].getExpense() * 80}]),
+    "Royal keep": new CoinRequirement([getItemElement("Royal keep")], [{requirement: gameData.itemData["Royal keep"].getExpense() * 80}]),
+    "Ancient citadel": new CoinRequirement([getItemElement("Ancient citadel")], [{requirement: gameData.itemData["Ancient citadel"].getExpense() * 80}]),
+    "Sky crown palace": new CoinRequirement([getItemElement("Sky crown palace")], [{requirement: gameData.itemData["Sky crown palace"].getExpense() * 80}]),
 
     //Misc
+    "Cheap meal": new CoinRequirement([getItemElement("Cheap meal")], [{requirement: 0}]),
     "Book": new CoinRequirement([getItemElement("Book")], [{requirement: 0}]),
+    "Ledger": new TaskRequirement([getItemElement("Ledger")], [{task: "Frugality", requirement: 5}]),
     "Dumbbells": new CoinRequirement([getItemElement("Dumbbells")], [{requirement: gameData.itemData["Dumbbells"].getExpense() * 100}]),
+    "Training dummy": new TaskRequirement([getItemElement("Training dummy")], [{task: "Strength", requirement: 15}]),
+    "Meditation mat": new TaskRequirement([getItemElement("Meditation mat")], [{task: "Meditation", requirement: 15}]),
     "Personal squire": new CoinRequirement([getItemElement("Personal squire")], [{requirement: gameData.itemData["Personal squire"].getExpense() * 100}]),
     "Steel longsword": new CoinRequirement([getItemElement("Steel longsword")], [{requirement: gameData.itemData["Steel longsword"].getExpense() * 100}]),
     "Butler": new CoinRequirement([getItemElement("Butler")], [{requirement: gameData.itemData["Butler"].getExpense() * 100}]),
     "Sapphire charm": new CoinRequirement([getItemElement("Sapphire charm")], [{requirement: gameData.itemData["Sapphire charm"].getExpense() * 100}]),
+    "Arcane focus": new TaskRequirement([getItemElement("Arcane focus")], [{task: "Mana control", requirement: 20}]),
+    "Royal ledger": new TaskRequirement([getItemElement("Royal ledger")], [{task: "Merchant", requirement: 25}, {task: "Frugality", requirement: 30}]),
     "Study desk": new CoinRequirement([getItemElement("Study desk")], [{requirement: gameData.itemData["Study desk"].getExpense() * 100}]),
     "Library": new CoinRequirement([getItemElement("Library")], [{requirement: gameData.itemData["Library"].getExpense() * 100}]), 
 }
