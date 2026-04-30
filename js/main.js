@@ -57,6 +57,13 @@ const jobBaseData = {
     "Wizard": {name: "Wizard", maxXp: 2200000, income: 50000},
     "Master wizard": {name: "Master wizard", maxXp: 8500000, income: 250000},
     "Chairman": {name: "Chairman", maxXp: 42000000, income: 1000000},
+
+    "Ruin acolyte": {name: "Ruin acolyte", maxXp: 4500, income: 380},
+    "Hex collector": {name: "Hex collector", maxXp: 18000, income: 1700},
+    "Soul broker": {name: "Soul broker", maxXp: 90000, income: 8000},
+    "Abyssal knight": {name: "Abyssal knight", maxXp: 450000, income: 33000},
+    "Infernal architect": {name: "Infernal architect", maxXp: 2500000, income: 130000},
+    "Reality heretic": {name: "Reality heretic", maxXp: 12000000, income: 550000},
 }
 
 const skillBaseData = {
@@ -87,7 +94,18 @@ const skillBaseData = {
     "Demon training": {name: "Demon training", maxXp: 100, effect: 0.01, description: "All xp"},
     "Blood meditation": {name: "Blood meditation", maxXp: 100, effect: 0.01, description: "Evil gain"},
     "Demon's wealth": {name: "Demon's wealth", maxXp: 100, effect: 0.002, description: "Job pay"},
-    
+    "Soul binding": {name: "Soul binding", maxXp: 140, effect: 0.008, description: "Evil work xp"},
+    "Dark haste": {name: "Dark haste", maxXp: 160, effect: 0.006, description: "Gamespeed"},
+    "Grave vitality": {name: "Grave vitality", maxXp: 180, effect: 0.006, description: "Longer lifespan"},
+    "Sin economy": {name: "Sin economy", maxXp: 170, effect: 0.006, description: "Evil work pay"},
+    "Reality fracture": {name: "Reality fracture", maxXp: 220, effect: 0.005, description: "Metaverse gain"},
+
+    "Dimensional mapping": {name: "Dimensional mapping", maxXp: 260, effect: 0.006, description: "Metaverse gain"},
+    "Parallel discipline": {name: "Parallel discipline", maxXp: 280, effect: 0.005, description: "All xp"},
+    "Chrono geometry": {name: "Chrono geometry", maxXp: 320, effect: 0.004, description: "Gamespeed"},
+    "Echo longevity": {name: "Echo longevity", maxXp: 340, effect: 0.005, description: "Longer lifespan"},
+    "Universe attunement": {name: "Universe attunement", maxXp: 380, effect: 0.006, description: "Passive MP"},
+
 }
 
 const itemBaseData = {
@@ -129,14 +147,16 @@ const itemBaseData = {
 const jobCategories = {
     "Common work": ["Beggar", "Farmer", "Stable hand", "Fisherman", "Woodcutter", "Miner", "Blacksmith", "Merchant"],
     "Military" : ["Squire", "Footman", "Veteran footman", "Knight", "Veteran knight", "Elite knight", "Holy knight", "Legendary knight"],
-    "The Arcane Association" : ["Student", "Apprentice mage", "Mage", "Wizard", "Master wizard", "Chairman"]
+    "The Arcane Association" : ["Student", "Apprentice mage", "Mage", "Wizard", "Master wizard", "Chairman"],
+    "Evil work": ["Ruin acolyte", "Hex collector", "Soul broker", "Abyssal knight", "Infernal architect", "Reality heretic"]
 }
 
 const skillCategories = {
     "Fundamentals": ["Concentration", "Productivity", "Patience", "Bargaining", "Frugality", "Diligence", "Meditation", "Curiosity"],
     "Combat": ["Strength", "Endurance", "Weapon handling", "Battle tactics", "Muscle memory"],
     "Magic": ["Mana control", "Arcane theory", "Immortality", "Time warping", "Super immortality"],
-    "Dark magic": ["Dark influence", "Evil control", "Intimidation", "Demon training", "Blood meditation", "Demon's wealth"]
+    "Dark magic": ["Dark influence", "Evil control", "Intimidation", "Demon training", "Blood meditation", "Demon's wealth", "Soul binding", "Dark haste", "Grave vitality", "Sin economy", "Reality fracture"],
+    "Multiverse": ["Dimensional mapping", "Parallel discipline", "Chrono geometry", "Echo longevity", "Universe attunement"]
 }
 
 const itemCategories = {
@@ -148,10 +168,12 @@ const headerRowColors = {
     "Common work": "#55a630",
     "Military": "#e63946",
     "The Arcane Association": "#C71585",
+    "Evil work": "#9b111e",
     "Fundamentals": "#4a4e69",
     "Combat": "#ff704d",
     "Magic": "#875F9A",
     "Dark magic": "#73000f",
+    "Multiverse": "#3a6ea5",
     "Properties": "#219ebc",
     "Misc": "#b56576",
 }
@@ -182,6 +204,13 @@ const tooltips = {
     "Master wizard": "Blessed with unparalleled talent, perform unbelievable feats with magic at will. It is said that a master wizard has enough destructive power to wipe an empire off the map.",
     "Chairman": "Spend your days administrating The Arcane Association and investigate the concepts of true immortality. The chairman receives ludicrous amounts of pay daily.",
 
+    "Ruin acolyte": "Serve small forbidden cults and learn how evil turns fear into income.",
+    "Hex collector": "Collect cursed debts for patrons who prefer silence over paperwork.",
+    "Soul broker": "Trade favors, names and fragments of souls in a market nobody admits exists.",
+    "Abyssal knight": "Fight as a dark champion where ordinary military discipline no longer applies.",
+    "Infernal architect": "Build ritual engines that turn wealth, fear and time into structured power.",
+    "Reality heretic": "Preach against the laws of the current world and prepare the first cracks toward the multiverse.",
+
     "Concentration": "Improve your learning speed through practising intense concentration activities.",
     "Productivity": "Learn to procrastinate less at work and receive more job experience per day.",
     "Patience": "Train yourself to endure slow progress without losing focus, improving long study sessions.",
@@ -209,6 +238,17 @@ const tooltips = {
     "Demon training": "A mere human body is too feeble and weak to withstand evil. Train with forbidden methods to slowly manifest into a demon, capable of absorbing knowledge rapidly.",
     "Blood meditation": "Grow and culture the evil within you through the sacrifise of other living beings, drastically increasing evil gain.",
     "Demon's wealth": "Through the means of dark magic, multiply the raw matter of the coins you receive from your job.",
+    "Soul binding": "Bind fragments of yourself to darker work, improving evil job experience.",
+    "Dark haste": "Let evil chew through wasted moments, increasing game speed without replacing time magic.",
+    "Grave vitality": "Keep the body moving through bleak rituals, extending lifespan during evil progression.",
+    "Sin economy": "Learn how fear, favors and forbidden contracts make evil work pay better.",
+    "Reality fracture": "Study the first tiny cracks in causality, improving Metaverse gains after Reality Break.",
+
+    "Dimensional mapping": "Chart the structure of unlocked universes, improving Metaverse gains.",
+    "Parallel discipline": "Train routines that remain useful across realities, improving all XP.",
+    "Chrono geometry": "Learn the shape of time between universes, increasing game speed in the multiverse.",
+    "Echo longevity": "Anchor fragments of long lives across realities, extending lifespan.",
+    "Universe attunement": "Tune each universe record into a steadier passive Metaverse income.",
 
     "Homeless": "Sleep on the uncomfortable, filthy streets while almost freezing to death every night. It cannot get any worse than this.",
     "Tent": "A thin sheet of tattered cloth held up by a couple of feeble, wooden sticks. Horrible living conditions but at least you have a roof over your head.",
@@ -275,6 +315,7 @@ function addMultipliers() {
         task.xpMultipliers.push(getBindedTaskEffect("Dark influence"))
         task.xpMultipliers.push(getBindedTaskEffect("Demon training"))
         task.xpMultipliers.push(getBindedTaskEffect("Diligence"))
+        task.xpMultipliers.push(getBindedTaskEffect("Parallel discipline"))
 
         if (task instanceof Job) {
             task.incomeMultipliers.push(task.getLevelMultiplier.bind(task))
@@ -298,6 +339,11 @@ function addMultipliers() {
             task.xpMultipliers.push(getBindedTaskEffect("Battle tactics"))
             task.xpMultipliers.push(getBindedTaskEffect("Weapon handling"))
             task.xpMultipliers.push(getBindedItemEffect("Steel longsword"))
+        } else if (jobCategories["Evil work"].includes(task.name)) {
+            task.incomeMultipliers.push(getBindedTaskEffect("Sin economy"))
+            task.incomeMultipliers.push(getBindedTaskEffect("Demon's wealth"))
+            task.xpMultipliers.push(getBindedTaskEffect("Soul binding"))
+            task.xpMultipliers.push(getBindedTaskEffect("Demon training"))
         } else if (task.name == "Strength") {
             task.xpMultipliers.push(getBindedTaskEffect("Muscle memory"))
             task.xpMultipliers.push(getBindedItemEffect("Dumbbells"))
@@ -318,6 +364,9 @@ function addMultipliers() {
             task.xpMultipliers.push(getBindedItemEffect("Arcane focus"))
         } else if (skillCategories["Dark magic"].includes(task.name)) {
             task.xpMultipliers.push(getEvil)
+        } else if (skillCategories["Multiverse"].includes(task.name)) {
+            task.xpMultipliers.push(getBindedTaskEffect("Reality fracture"))
+            task.xpMultipliers.push(getBindedTaskEffect("Dimensional mapping"))
         }
 
         if (task.name == "Fisherman") task.incomeMultipliers.push(getBindedItemEffect("Fishing net"))
@@ -410,7 +459,8 @@ function getEvilGain() {
 function getGameSpeed() {
     var timeWarping = gameData.taskData["Time warping"]
     var timeWarpingSpeed = gameData.timeWarpingEnabled ? timeWarping.getEffect() : 1
-    var gameSpeed = baseGameSpeed * +!gameData.paused * +isAlive() * timeWarpingSpeed
+    var darkHaste = gameData.taskData["Dark haste"] ? gameData.taskData["Dark haste"].getEffect() : 1
+    var gameSpeed = baseGameSpeed * +!gameData.paused * +isAlive() * timeWarpingSpeed * darkHaste
     return gameSpeed
 }
 
@@ -1010,7 +1060,9 @@ function getLifespan() {
     var immortality = gameData.taskData["Immortality"]
     var superImmortality = gameData.taskData["Super immortality"]
     var endurance = gameData.taskData["Endurance"]
-    var lifespan = baseLifespan * endurance.getEffect() * immortality.getEffect() * superImmortality.getEffect()
+    var graveVitality = gameData.taskData["Grave vitality"] ? gameData.taskData["Grave vitality"].getEffect() : 1
+    var echoLongevity = gameData.taskData["Echo longevity"] ? gameData.taskData["Echo longevity"].getEffect() : 1
+    var lifespan = baseLifespan * endurance.getEffect() * immortality.getEffect() * superImmortality.getEffect() * graveVitality * echoLongevity
     return lifespan
 }
 
@@ -1059,6 +1111,8 @@ function assignMethods() {
             requirement = Object.assign(new AgeRequirement(requirement.elements, requirement.requirements), requirement)
         } else if (requirement.type == "evil") {
             requirement = Object.assign(new EvilRequirement(requirement.elements, requirement.requirements), requirement)
+        } else if (requirement.type == "reality") {
+            requirement = Object.assign(new RealityRequirement(requirement.elements, requirement.requirements), requirement)
         }
 
         var tempRequirement = tempData["requirements"][key]
@@ -1184,6 +1238,8 @@ gameData.requirements = {
     //Other
     "The Arcane Association": new TaskRequirement(getElementsByClass("The Arcane Association"), [{task: "Mana control", requirement: 1}]),
     "Dark magic": new EvilRequirement(getElementsByClass("Dark magic"), [{requirement: 1}]),
+    "Evil work": new EvilRequirement(getElementsByClass("Evil work"), [{requirement: 5}]),
+    "Multiverse": new RealityRequirement(getElementsByClass("Multiverse"), [{requirement: 1}]),
     "Shop": new CoinRequirement([document.getElementById("shopTabButton")], [{requirement: gameData.itemData["Tent"].getExpense() * 50}]),
     "Rebirth tab": new AgeRequirement([document.getElementById("rebirthTabButton")], [{requirement: 25}]),
     "Rebirth note 1": new AgeRequirement([document.getElementById("rebirthNote1")], [{requirement: 45}]),
@@ -1222,6 +1278,14 @@ gameData.requirements = {
     "Master wizard": new TaskRequirement([getTaskElement("Master wizard")], [{task: "Time warping", requirement: 100}, {task: "Wizard", requirement: 10}]),
     "Chairman": new TaskRequirement([getTaskElement("Chairman")], [{task: "Time warping", requirement: 25}, {task: "Master wizard", requirement: 10}]),
 
+    //Evil work
+    "Ruin acolyte": new EvilRequirement([getTaskElement("Ruin acolyte")], [{requirement: 5}]),
+    "Hex collector": new TaskRequirement([getTaskElement("Hex collector")], [{task: "Dark influence", requirement: 20}, {task: "Ruin acolyte", requirement: 10}]),
+    "Soul broker": new TaskRequirement([getTaskElement("Soul broker")], [{task: "Evil control", requirement: 35}, {task: "Hex collector", requirement: 10}]),
+    "Abyssal knight": new TaskRequirement([getTaskElement("Abyssal knight")], [{task: "Demon training", requirement: 45}, {task: "Soul broker", requirement: 10}]),
+    "Infernal architect": new TaskRequirement([getTaskElement("Infernal architect")], [{task: "Blood meditation", requirement: 60}, {task: "Abyssal knight", requirement: 10}]),
+    "Reality heretic": new TaskRequirement([getTaskElement("Reality heretic")], [{task: "Demon's wealth", requirement: 80}, {task: "Dark haste", requirement: 60}, {task: "Infernal architect", requirement: 10}]),
+
     //Fundamentals
     "Concentration": new TaskRequirement([getTaskElement("Concentration")], []),
     "Productivity": new TaskRequirement([getTaskElement("Productivity")], [{task: "Concentration", requirement: 5}]),
@@ -1253,6 +1317,18 @@ gameData.requirements = {
     "Demon training": new EvilRequirement([getTaskElement("Demon training")], [{requirement: 25}]),
     "Blood meditation": new EvilRequirement([getTaskElement("Blood meditation")], [{requirement: 75}]),
     "Demon's wealth": new EvilRequirement([getTaskElement("Demon's wealth")], [{requirement: 500}]),
+    "Soul binding": new TaskRequirement([getTaskElement("Soul binding")], [{task: "Dark influence", requirement: 25}, {task: "Ruin acolyte", requirement: 5}]),
+    "Dark haste": new TaskRequirement([getTaskElement("Dark haste")], [{task: "Demon training", requirement: 35}, {task: "Soul binding", requirement: 20}]),
+    "Grave vitality": new TaskRequirement([getTaskElement("Grave vitality")], [{task: "Blood meditation", requirement: 35}, {task: "Soul binding", requirement: 30}]),
+    "Sin economy": new TaskRequirement([getTaskElement("Sin economy")], [{task: "Demon's wealth", requirement: 25}, {task: "Soul broker", requirement: 5}]),
+    "Reality fracture": new TaskRequirement([getTaskElement("Reality fracture")], [{task: "Reality heretic", requirement: 5}, {task: "Dark haste", requirement: 80}]),
+
+    //Multiverse
+    "Dimensional mapping": new RealityRequirement([getTaskElement("Dimensional mapping")], [{requirement: 1}]),
+    "Parallel discipline": new TaskRequirement([getTaskElement("Parallel discipline")], [{task: "Dimensional mapping", requirement: 10}]),
+    "Chrono geometry": new TaskRequirement([getTaskElement("Chrono geometry")], [{task: "Dimensional mapping", requirement: 25}]),
+    "Echo longevity": new TaskRequirement([getTaskElement("Echo longevity")], [{task: "Dimensional mapping", requirement: 40}, {task: "Chrono geometry", requirement: 20}]),
+    "Universe attunement": new TaskRequirement([getTaskElement("Universe attunement")], [{task: "Dimensional mapping", requirement: 60}, {task: "Parallel discipline", requirement: 30}]),
 
     //Properties
     "Homeless": new CoinRequirement([getItemElement("Homeless")], [{requirement: 0}]),

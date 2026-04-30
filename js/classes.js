@@ -164,5 +164,16 @@ class EvilRequirement extends Requirement {
 
     getCondition(requirement) {
         return gameData.evil >= requirement.requirement
-    }    
+    }
+}
+
+class RealityRequirement extends Requirement {
+    constructor(elements, requirements) {
+        super(elements, requirements)
+        this.type = "reality"
+    }
+
+    getCondition(requirement) {
+        return typeof rbLoadMeta === "function" && rbLoadMeta().realityBroken
+    }
 }
