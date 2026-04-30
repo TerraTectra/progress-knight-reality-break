@@ -47,19 +47,14 @@ function rbNextTargetForSkill(skill) {
 
 function rbXpToTarget(skill, target) {
   var need = Math.max(0, skill.getMaxXp() - skill.xp);
-  var originalLevel = skill.level;
-  var originalXp = skill.xp;
 
-  // Avoid mutating the real skill. Recreate the same max-xp curve locally.
   function maxXpAt(level) {
     return Math.round(skill.baseData.maxXp * (level + 1) * Math.pow(1.01, level));
   }
 
-  for (var level = originalLevel + 1; level < target; level++) {
+  for (var level = skill.level + 1; level < target; level++) {
     need += maxXpAt(level);
   }
-  skill.level = originalLevel;
-  skill.xp = originalXp;
   return need;
 }
 
@@ -100,7 +95,6 @@ function rbEffectScore(skill) {
   if (desc.includes("evil gain")) score += 1.2;
   if (desc.includes("job pay")) score += 0.75;
 
-  // Early game: keep a soft bias toward reaching magic, but not at the cost of ignoring cheap useful levels.
   var mana = gameData.taskData && gameData.taskData["Mana control"];
   if (!mana || mana.level <= 0) {
     if (["Concentration", "Productivity", "Meditation"].indexOf(skill.name) !== -1) score += 0.9;
@@ -121,12 +115,12 @@ function rbAverageSkillLevel(skills) {
   return skills.reduce(function(sum, skill) { return sum + (skill.level || 0); }, 0) / skills.length;
 }
 
-function rbPickSmartSkill() {
+function rbRankSmartSkills() {
   var skills = rbAvailableSkills();
-  if (!skills.length) return null;
+  if (!skills.length) return [];
 
   var averageLevel = rbAverageSkillLevel(skills);
-  var ranked = skills.map(function(skill) {
+  return skills.map(function(skill) {
     var target = rbNextTargetForSkill(skill);
     var need = rbXpToTarget(skill, target);
     var gain = Math.max(0.001, skill.getXpGain ? skill.getXpGain() : 1);
@@ -136,23 +130,35 @@ function rbPickSmartSkill() {
     var effect = rbEffectScore(skill) * Math.sqrt(Math.max(1, skill.getEffect ? skill.getEffect() : 1));
     var quick = rbQuickWinScore(days, skill.level || 0);
     var score = (unlock * 0.95 + effect * 1.35 + quick * 1.15) * catchUp / Math.pow(Math.max(0.35, days), 0.72);
-    return { skill: skill, target: target, score: score };
+    return { skill: skill, target: target, days: days, score: score };
   }).sort(function(a, b) { return b.score - a.score; });
+}
+
+function rbPickSmartSkillPlan() {
+  var ranked = rbRankSmartSkills();
+  if (!ranked.length) return null;
 
   var best = ranked[0];
   var current = gameData.currentSkill;
   if (current) {
     var currentPlan = ranked.find(function(entry) { return entry.skill.name === current.name; });
-    if (currentPlan && current.level < currentPlan.target && currentPlan.score >= best.score * 0.88) return current;
+    if (currentPlan && current.level < currentPlan.target && currentPlan.score >= best.score * 0.88) return currentPlan;
   }
-  return best.skill;
+  return best;
 }
 
 function rbSmartAutoLearnTick() {
   var autoLearn = document.getElementById("autoLearn");
   if (!autoLearn || !autoLearn.checked || typeof setTask !== "function") return;
-  var skill = rbPickSmartSkill();
-  if (skill && gameData.currentSkill !== skill) setTask(skill.name);
+  var plan = rbPickSmartSkillPlan();
+  if (plan && gameData.currentSkill !== plan.skill) setTask(plan.skill.name);
+}
+
+function rbFormatDays(days) {
+  if (!Number.isFinite(days)) return "?";
+  if (days >= 365) return (days / 365).toFixed(1) + "y";
+  if (days >= 30) return (days / 30).toFixed(1) + "m";
+  return Math.max(0.1, days).toFixed(1) + "d";
 }
 
 function rbInstallSmartAutoLearnUi() {
@@ -163,14 +169,25 @@ function rbInstallSmartAutoLearnUi() {
   note.style.color = "gray";
   note.style.fontSize = "12px";
   note.style.marginTop = "4px";
-  note.textContent = "Auto-learn uses smart priority.";
   automation.appendChild(note);
+}
+
+function rbUpdateSmartAutoLearnUi() {
+  var note = document.getElementById("realityBreakSmartLearnNote");
+  if (!note) return;
+  var plan = rbPickSmartSkillPlan();
+  if (!plan) {
+    note.textContent = "Smart auto-learn: waiting for visible skills.";
+    return;
+  }
+  note.textContent = "Smart target: " + plan.skill.name + " → lvl " + plan.target + " (~" + rbFormatDays(plan.days) + ")";
 }
 
 function installRealityBreakSmartAutoLearn() {
   rbInstallSmartAutoLearnUi();
   setInterval(function() {
     rbInstallSmartAutoLearnUi();
+    rbUpdateSmartAutoLearnUi();
     rbSmartAutoLearnTick();
   }, 500);
 }
