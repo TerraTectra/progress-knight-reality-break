@@ -170,38 +170,67 @@ function rbBuyEvilPerk(id) {
 
 function rbEvilPerkXpMultiplier(meta) {
     var multiplier = 1;
-    if (rbHasEvilPerk("shadowDiscipline", meta)) multiplier *= 1.12;
+    if (rbHasEvilPerk("shadowDiscipline", meta)) multiplier *= 1 + rbScaledEvilPerkBonus(meta, "xp", 0.12);
     return multiplier;
 }
 
 function rbEvilPerkIncomeMultiplier(meta) {
     var multiplier = 1;
-    if (rbHasEvilPerk("darkPatronage", meta)) multiplier *= 1.15;
+    if (rbHasEvilPerk("darkPatronage", meta)) multiplier *= 1 + rbScaledEvilPerkBonus(meta, "income", 0.15);
     return multiplier;
 }
 
 function rbEvilPerkExpenseMultiplier(meta) {
     var multiplier = 1;
-    if (rbHasEvilPerk("wickedBargain", meta)) multiplier *= 0.92;
+    if (rbHasEvilPerk("wickedBargain", meta)) multiplier *= Math.max(0.75, 1 - rbScaledEvilPerkBonus(meta, "expense", 0.08));
     return multiplier;
 }
 
 function rbEvilPerkLifespanMultiplier(meta) {
     var multiplier = 1;
-    if (rbHasEvilPerk("deathDefiance", meta)) multiplier *= 1.18;
+    if (rbHasEvilPerk("deathDefiance", meta)) multiplier *= 1 + rbScaledEvilPerkBonus(meta, "lifespan", 0.18);
     return multiplier;
 }
 
 function rbEvilPerkSpeedMultiplier(meta) {
     var multiplier = 1;
-    if (rbHasEvilPerk("demonicMomentum", meta)) multiplier *= 1.12;
+    if (rbHasEvilPerk("demonicMomentum", meta)) multiplier *= 1 + rbScaledEvilPerkBonus(meta, "speed", 0.12);
     return multiplier;
 }
 
 function rbEvilPerkEvilGainMultiplier(meta) {
     var multiplier = 1;
-    if (rbHasEvilPerk("soulFurnace", meta)) multiplier *= 1.3;
+    if (rbHasEvilPerk("soulFurnace", meta)) multiplier *= 1 + rbScaledEvilPerkBonus(meta, "evil", 0.3);
     return multiplier;
+}
+
+function rbUniverseEvilPerkScale(meta, channel) {
+    if (!meta || !meta.realityBroken) return 1;
+    var universe = rbUniverseRule(meta.currentUniverse || 1);
+    var scale = 1 + Math.max(0, universe.id - 1) * 0.015;
+    if (channel === "xp" && (universe.stat === "skill" || universe.stat === "balanced")) scale += 0.08;
+    if (channel === "income" && universe.stat === "job") scale += 0.12;
+    if (channel === "expense") scale += Math.max(0, universe.expense - 1) * 0.06;
+    if (channel === "lifespan" && universe.stat === "lifespan") scale += 0.18;
+    if (channel === "speed" && universe.stat === "speed") scale += 0.18;
+    if (channel === "evil" && universe.stat === "evil") scale += 0.22;
+    return scale;
+}
+
+function rbScaledEvilPerkBonus(meta, channel, baseBonus) {
+    return baseBonus * rbUniverseEvilPerkScale(meta, channel);
+}
+
+function rbEvilPerkCurrentDescription(perk, meta) {
+    if (!meta) meta = rbLoadMeta();
+    if (perk.id === "shadowDiscipline") return "+" + Math.round(rbScaledEvilPerkBonus(meta, "xp", 0.12) * 100) + "% all XP";
+    if (perk.id === "darkPatronage") return "+" + Math.round(rbScaledEvilPerkBonus(meta, "income", 0.15) * 100) + "% income";
+    if (perk.id === "wickedBargain") return "-" + Math.round(rbScaledEvilPerkBonus(meta, "expense", 0.08) * 100) + "% expenses";
+    if (perk.id === "soulFurnace") return "+" + Math.round(rbScaledEvilPerkBonus(meta, "evil", 0.3) * 100) + "% Evil gain";
+    if (perk.id === "deathDefiance") return "+" + Math.round(rbScaledEvilPerkBonus(meta, "lifespan", 0.18) * 100) + "% lifespan";
+    if (perk.id === "demonicMomentum") return "+" + Math.round(rbScaledEvilPerkBonus(meta, "speed", 0.12) * 100) + "% game speed";
+    if (perk.id === "realityRupture") return meta.realityBroken ? "Reality is already broken" : "Breaks reality and opens the Multiverse";
+    return perk.description;
 }
 
 function rbAllXpMultiplier() {
@@ -683,9 +712,10 @@ function rbEvilPerkHtml(meta, perk) {
     var canBuy = rbCanBuyEvilPerk(perk.id, meta);
     var isRealityBreak = perk.id === "realityRupture";
     var buttonText = owned ? (isRealityBreak ? "Reality broken" : "Owned") : (isRealityBreak ? "Break reality - " : "Buy - ") + perk.cost + " Evil";
+    var tunedText = meta.realityBroken && !isRealityBreak ? '<br><span class="rb-muted">Tuned by U-' + (meta.currentUniverse || 1) + ': ' + rbUniverseRule(meta.currentUniverse || 1).focus + '</span>' : '';
     return '<tr class="' + (owned ? 'unlocked' : '') + '">' +
         '<td><b>' + perk.name + '</b></td>' +
-        '<td>' + perk.description + '<br><span class="rb-muted">Required: ' + rbEvilPerkRequirementsText(perk) + '</span></td>' +
+        '<td>' + rbEvilPerkCurrentDescription(perk, meta) + tunedText + '<br><span class="rb-muted">Required: ' + rbEvilPerkRequirementsText(perk) + '</span></td>' +
         '<td>' + perk.cost + ' Evil</td>' +
         '<td><button class="w3-button button rb-buy-evil-perk" data-rb-evil-perk="' + perk.id + '"' + (canBuy ? "" : " disabled") + '>' + buttonText + '</button></td>' +
     '</tr>';
@@ -700,12 +730,13 @@ function rbRenderEvilPerksTab() {
         return;
     }
     var meta = rbLoadMeta();
+    var breakStatus = meta.realityBroken ? "Reality already broken. Evil perks now adapt to the current universe." : rbMissingRealityRequirementsText();
     var html = '<div class="rb-section-title red">Evil perks</div>' +
         '<div class="rb-summary">' +
             '<div><span class="rb-muted">Evil</span><b style="color: rgb(200, 0, 0)">' + Math.floor(gameData.evil || 0) + '</b></div>' +
             '<div><span class="rb-muted">Owned perks</span><b>' + Object.keys(meta.evilPerks || {}).length + '/' + REALITY_BREAK_EVIL_PERKS.length + '</b></div>' +
             '<div><span class="rb-muted">Next layer</span><b>' + (meta.realityBroken ? 'Multiverse open' : 'Reality Break') + '</b></div>' +
-            '<div><span class="rb-muted">Break requirement</span><b>' + rbMissingRealityRequirementsText() + '</b></div>' +
+            '<div><span class="rb-muted">' + (meta.realityBroken ? 'Current tuning' : 'Break requirement') + '</span><b>' + breakStatus + '</b></div>' +
         '</div>' +
         '<div class="rb-multiverse-actions"><b>Evil phase</b><br>' +
         '<span class="rb-muted">These are permanent Evil purchases. The final perk is the first Reality Break and opens the Multiverse.</span></div>' +
@@ -805,7 +836,7 @@ function rbRenderMultiverseTab() {
         '</div>' +
         '<div class="rb-multiverse-actions">' +
             '<div><b>Universe collapse</b> <span class="rb-muted">Second meta layer. Collapse the current universe to earn MP and unlock the next universe.</span></div>' +
-            '<div>Collapse cost: <b class="rb-mp">' + (currentUniverse.breakCost || 0) + ' MP</b> · Estimated gain: <b class="rb-mp">' + gain + ' MP</b></div>' +
+            '<div>Collapse cost: <b class="rb-mp">' + (currentUniverse.breakCost || 0) + ' MP</b> - Estimated gain: <b class="rb-mp">' + gain + ' MP</b></div>' +
             '<div class="rb-muted">Current rule: ' + currentUniverse.rule + '</div>' +
             '<button id="rbCollapseUniverseButton" class="w3-button button" ' + (canCollapse ? "" : "disabled") + '>Collapse U-' + (meta.currentUniverse || 1) + '</button>' +
         '</div>';
